@@ -1,12 +1,13 @@
 import { useEffect } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { LoginPage, ActivationPage, SignupPage, HomePage, ProductsPage, BestSellingPage, EventsPage, FAQPage, ProductDetailsPage } from './Routes.js';
+import { LoginPage, ActivationPage, SignupPage, HomePage, ProductsPage, BestSellingPage, EventsPage, FAQPage, ProductDetailsPage , ProfilePage} from './Routes.js';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Store from './redux/store.js';
 import { loadUser } from "./redux/actions/user";
 import { useSelector } from 'react-redux';
+
 
 // ScrollToTop Component
 const ScrollToTop = () => {
@@ -33,6 +34,7 @@ const AppRoutes = () => {
         <Route path='/best-selling' element={<BestSellingPage />} />
         <Route path='/events' element={<EventsPage />} />
         <Route path='/faq' element={<FAQPage />} />
+        <Route path='/profile' element={<ProfilePage />} />
       </Routes>
     </>
   )
