@@ -14,20 +14,26 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const res = await axios.post(
         `${server}/user/login-user`,
         { email, password },
         { withCredentials: true }
       );
+
       toast.success("Login Success!");
-      navigate("/");
-      window.location.reload(true);
+
+      setTimeout(() => {
+        navigate("/");
+        window.location.reload();
+      }, 800); // give toast time to render
+
     } catch (err) {
       toast.error(err?.response?.data?.message || err.message);
     }
-
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">

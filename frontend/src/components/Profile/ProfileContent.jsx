@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import { backend_url } from "../../server";
 import { AiOutlineArrowRight, AiOutlineCamera, AiOutlineDelete } from "react-icons/ai";
@@ -9,15 +9,16 @@ import { Button } from "@mui/material";
 import { Link } from "react-router-dom";
 
 
+
 const ProfileContent = ({ active }) => {
 
     const { user } = useSelector((state) => state.user);
     const [name, setName] = useState(user && user.name);
     const [email, setEmail] = useState(user && user.email);
-    const [phoneNumber, setPhoneNumber] = useState()
-    const [zipcode, setZipCode] = useState()
-    const [address1, setAddress1] = useState("")
-    const [address2, setAddress2] = useState("");
+    const [phoneNumber, setPhoneNumber] = useState("03000000000")
+    const [zipcode, setZipCode] = useState("00000")
+    const [address1, setAddress1] = useState("123 Main St")
+    const [address2, setAddress2] = useState("Province, Country");
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -34,7 +35,7 @@ const ProfileContent = ({ active }) => {
 
 
     return (
-        <div className="w-full">
+        <div className="w-full pt-10 md:pt-0 md:pl-10">
             {/* Profile Page */}
             {
 
@@ -45,32 +46,29 @@ const ProfileContent = ({ active }) => {
                                 <img
                                     src={avatarSrc}
                                     alt=""
-                                    className="w-[150px] h-[150px] rounded-full object-cover border-[3px] border-[#3ad132]"
+                                    className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 rounded-full object-cover border-2 border-[#3ad132]"
                                 />
-                                <div className="w-[30px] h-[30px] bg-[#e3e9ee] rounded-full flex items-center justify-center cursor-pointer absolute bottom-[5px] right-[5px]">
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#e3e9ee] rounded-full flex items-center justify-center cursor-pointer absolute bottom-1 right-1 sm:bottom-2 sm:right-2">
                                     <AiOutlineCamera />
                                 </div>
                             </div>
-
                         </div>
+
                         <br />
                         <br />
-                        <div className="w-full px-5">
-                            <form onSubmit={handleSubmit} aria-required={true}>
-                                <div className="flex flex-col md:flex-row md:gap-4 w-full">
-                                    {/* Full Name */}
-                                    <div className="flex-1 mb-4 md:mb-0">
+                        <div className="w-full px-4 sm:px-6 md:px-8">
+                            <form onSubmit={handleSubmit}>
+                                <div className="flex flex-col md:flex-row gap-4 w-full">
+                                    <div className="flex-1">
                                         <label className="block pb-2">Full Name</label>
                                         <input
                                             type="text"
                                             className={`${styles.input} w-full`}
                                             required
-                                            value={name || ""}
+                                            value={name}
                                             onChange={(e) => setName(e.target.value)}
                                         />
                                     </div>
-
-                                    {/* Email */}
                                     <div className="flex-1">
                                         <label className="block pb-2">Email</label>
                                         <input
@@ -82,9 +80,10 @@ const ProfileContent = ({ active }) => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex flex-col md:flex-row md:gap-4 w-full">
-                                    {/* Phone Number */}
-                                    <div className="flex-1 mb-4 md:mb-0">
+
+                                {/* Other fields */}
+                                <div className="flex flex-col md:flex-row gap-4 mt-4">
+                                    <div className="flex-1">
                                         <label className="block pb-2">Phone Number</label>
                                         <input
                                             type="number"
@@ -94,8 +93,6 @@ const ProfileContent = ({ active }) => {
                                             onChange={(e) => setPhoneNumber(e.target.value)}
                                         />
                                     </div>
-
-                                    {/* Email */}
                                     <div className="flex-1">
                                         <label className="block pb-2">Zip Code</label>
                                         <input
@@ -107,24 +104,23 @@ const ProfileContent = ({ active }) => {
                                         />
                                     </div>
                                 </div>
-                                <div className="flex flex-col md:flex-row md:gap-4 w-full">
-                                    {/* Phone Number */}
-                                    <div className="flex-1 mb-4 md:mb-0">
+
+                                {/* Address Fields */}
+                                <div className="flex flex-col md:flex-row gap-4 mt-4">
+                                    <div className="flex-1">
                                         <label className="block pb-2">Address 1</label>
                                         <input
-                                            type="address"
+                                            type="text"
                                             className={`${styles.input} w-full`}
                                             required
                                             value={address1}
                                             onChange={(e) => setAddress1(e.target.value)}
                                         />
                                     </div>
-
-                                    {/* Email */}
                                     <div className="flex-1">
-                                        <label className="block pb-2">Address2 </label>
+                                        <label className="block pb-2">Address 2</label>
                                         <input
-                                            type="address"
+                                            type="text"
                                             className={`${styles.input} w-full`}
                                             required
                                             value={address2}
@@ -132,14 +128,15 @@ const ProfileContent = ({ active }) => {
                                         />
                                     </div>
                                 </div>
+
                                 <input
                                     type="submit"
-                                    required
                                     value="Update"
-                                    className={`w-[250px] h-40px  border border-[#3a24db] text-center text-[#3a24db] rounded-[3px] mt-8 cursor-pointer`}
+                                    className="w-full md:w-[250px] h-10 md:h-12 mt-6 border border-[#3a24db] text-[#3a24db] rounded-md cursor-pointer"
                                 />
                             </form>
                         </div>
+
 
 
                     </>

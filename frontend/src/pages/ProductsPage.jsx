@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { productData } from "../static/data";
 import ProductCard from "../components/Route/ProductCard/ProductCard";
 import Header from "../components/Layout/Header";
+import Footer from "../components/Layout/Footer";
 import styles from "../styles/styles";
 
 export default function ProductsPage() {
@@ -21,7 +22,7 @@ export default function ProductsPage() {
   }, [category]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 mt-10 md:mt-0">
       <Header activeHeading={3} />
 
       <div className="py-10">
@@ -41,6 +42,7 @@ export default function ProductsPage() {
           )}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

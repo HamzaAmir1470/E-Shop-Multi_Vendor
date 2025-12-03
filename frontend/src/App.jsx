@@ -1,12 +1,14 @@
 import { useEffect } from 'react';
 import './App.css';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
-import { LoginPage, ActivationPage, SignupPage, HomePage, ProductsPage, BestSellingPage, EventsPage, FAQPage, ProductDetailsPage , ProfilePage} from './Routes.js';
+import { LoginPage, ActivationPage, SignupPage, HomePage, ProductsPage, BestSellingPage, EventsPage, FAQPage, ProductDetailsPage, ProfilePage , CheckoutPage, OrderSuccessPage} from './Routes.js';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Store from './redux/store.js';
 import { loadUser } from "./redux/actions/user";
 import { useSelector } from 'react-redux';
+import ProtectedRoute from './ProtectedRoute.jsx';
+// import { isAuthenticated } from '../../backend/middleware/auth.js';
 
 
 // ScrollToTop Component
@@ -20,7 +22,7 @@ const ScrollToTop = () => {
   return null;
 };
 
-const AppRoutes = () => {
+const AppRoutes = ({ isAuthenticated }) => {
   return (
     <>
       <ScrollToTop />
@@ -34,14 +36,27 @@ const AppRoutes = () => {
         <Route path='/best-selling' element={<BestSellingPage />} />
         <Route path='/events' element={<EventsPage />} />
         <Route path='/faq' element={<FAQPage />} />
-        <Route path='/profile' element={<ProfilePage />} />
+        <Route
+          path="/checkout"
+          element={
+            <ProtectedRoute>
+              <CheckoutPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route path="/order/success" element={<OrderSuccessPage />} />
+        <Route path='/profile' element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
       </Routes>
     </>
   )
 };
 
 const App = () => {
-  const { loading } = useSelector((state) => state.user);
+  const { loading, isAuthenticated } = useSelector((state) => state.user);
 
   useEffect(() => {
     Store.dispatch(loadUser());

@@ -59,7 +59,7 @@ function Faq() {
   };
 
   return (
-    <div className={`${styles.section} py-10 animate-fadeIn`}>
+    <div className={`${styles.section} py-10 animate-fadeIn mt-10 md:mt-0`}>
       <h2 className="text-4xl font-extrabold text-gray-900 mb-10">Frequently Asked Questions</h2>
 
       <div className="space-y-6 max-w-3xl mx-auto">
