@@ -147,7 +147,7 @@ const Header = ({ activeHeading, setActiveHeading }) => {
 
             {/* DESKTOP BLUE BAR */}
             <div
-                className={`hidden md:flex items-center w-full bg-[#3321c8] h-[60px] shadow-sm z-30${active ? "fixed top-0 left-0" : "absolute top-[90px] left-0"}`}>
+                className={`hidden md:flex items-center w-full bg-[#3321c8] h-[60px] md:sticky shadow-sm z-30 ${active ? "fixed top-0 left-0" : "absolute top-[90px] left-0"}`}>
                 <div className={`${styles.section} flex items-center justify-between h-full`}>
                     {/* CATEGORY */}
                     <div className="relative h-[60px] w-[270px]">
