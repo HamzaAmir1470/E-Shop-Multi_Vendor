@@ -9,13 +9,13 @@ const cors = require('cors');
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true
+  origin: "http://localhost:5173", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
 }));
+
 app.use('/', express.static('uploads'));
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
-// app.use(fileUpload({useTempFiles: true}));
 
 // test route
 app.use("/test", (req, res) => {
@@ -23,15 +23,17 @@ app.use("/test", (req, res) => {
 });
 
 // config
-if(process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production') {
   require('dotenv').config({
-    path : "backend/config/.env"
+    path: "backend/config/.env"
   });
 }
 
 // Importing routes
 const user = require('./controller/user');
+const shop = require('./controller/shop');
 app.use('/api/v2/user', user);
+app.use('/api/v2/shop', shop);
 
 // Middleware for error handling
 const errorMiddleware = require('./middleware/Error');
