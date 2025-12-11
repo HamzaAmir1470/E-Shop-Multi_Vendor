@@ -124,15 +124,6 @@ const App = () => {
   }, [dispatch]);
 
 
-  // Redirect seller after login (only once)
-  useEffect(() => {
-    if (!sellerLoading && isSeller && seller?._id && !hasRedirected.current) {
-      hasRedirected.current = true;
-      navigate(`/shop/${seller._id}`);
-    }
-  }, [sellerLoading, isSeller, seller, navigate]);
-
-
   if (userLoading || sellerLoading) return null;
 
   return (

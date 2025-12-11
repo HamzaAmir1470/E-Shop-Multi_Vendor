@@ -16,7 +16,7 @@ const ShopCreate = () => {
     const [password, setPassword] = useState("");
     const [avatar, setAvatar] = useState(null); // store actual file
     const [visible, setVisible] = useState(false);
-    
+
 
     // Handle file input change
     const handleFileInputChange = (e) => {
@@ -27,15 +27,35 @@ const ShopCreate = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Validation
+        if (!name.trim()) {
+            toast.error("Please enter shop name");
+            return;
+        }
+        if (!email.trim()) {
+            toast.error("Please enter email address");
+            return;
+        }
+        if (!phoneNumber.trim()) {
+            toast.error("Please enter phone number");
+            return;
+        }
+        if (!address.trim()) {
+            toast.error("Please enter address");
+            return;
+        }
+        if (!zipCode.trim()) {
+            toast.error("Please enter zip code");
+            return;
+        }
+        if (!password.trim()) {
+            toast.error("Please enter password");
+            return;
+        }
         if (!avatar) {
             toast.error("Please upload an avatar");
             return;
         }
-        const config = {
-            headers: {
-                "Content-Type": "multipart/form-data",
-            },
-        };
 
         try {
             const formData = new FormData();
@@ -46,11 +66,13 @@ const ShopCreate = () => {
             formData.append("address", address);
             formData.append("zipCode", zipCode);
             formData.append("phoneNumber", phoneNumber);
-            
+
 
             const res = await axios.post(`${server}/shop/create-shop`, formData, {
                 withCredentials: true,
-                config,
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
             });
 
             toast.success(res.data.message);

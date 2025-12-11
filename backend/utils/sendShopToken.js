@@ -1,24 +1,17 @@
-// create token and saving that in cookies
+// utils/sendShopToken.js
 const sendShopToken = (seller, statusCode, res) => {
     const token = seller.getJwtToken();
 
-    // remove password before sending to frontend
-    seller.password = undefined;
-
-    // Cookie options
-    const options = {
-        expires: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
-        httpOnly: true,
-        sameSite: "none",
-        secure: true,
-    };
-
-    res
-        .status(statusCode)
-        .cookie("seller_token", token, options)
+    res.status(statusCode)
+        .cookie("seller_token", token, {
+            httpOnly: true,
+            secure: true,           // REQUIRED for cross-site cookies
+            sameSite: "none",       // REQUIRED for cross-site cookies
+            expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        })
         .json({
             success: true,
-            seller,   // <-- IMPORTANT: return seller object
+            seller,
             token,
         });
 };

@@ -15,7 +15,11 @@ const ErrorHandler = require("../utils/ErrorHandler");
 // Create a new shop
 router.post("/create-shop", upload.single("file"), async (req, res, next) => {
     try {
-        const { email, } = req.body;
+        if (!req.file) {
+            return next(new ErrorHandler("Please upload a shop avatar", 400));
+        }
+
+        const { email } = req.body;
         const sellerEmail = await Shop.findOne({ email });
 
         if (sellerEmail) {
@@ -42,8 +46,8 @@ router.post("/create-shop", upload.single("file"), async (req, res, next) => {
                 url: fileUrl,         // actual URL
             },
             address: req.body.address,
-            phoneNumber: req.body.phoneNumber,
-            zipCode: req.body.zipCode,
+            phoneNumber: Number(req.body.phoneNumber),
+            zipCode: Number(req.body.zipCode),
         };
 
         const activationToken = createActivationToken(seller);
