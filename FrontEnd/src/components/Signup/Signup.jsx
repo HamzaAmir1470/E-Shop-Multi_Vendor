@@ -3,7 +3,9 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link } from "react-router-dom";
 import { RxAvatar } from "react-icons/rx";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { server } from "../../server";
 
 const Signup = () => {
     const [email, setEmail] = useState("");
@@ -14,17 +16,28 @@ const Signup = () => {
     const [preview, setPreview] = useState(null);
     const navigate = useNavigate();
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        console.log({name, email, password, avatar});
-        // Implement signup logic here
-        navigate("/login");
-    }
-
     const handlefileInputChange = (e) => {
+
         const file = e.target.files[0];
         setAvatar(file);
         setPreview(URL.createObjectURL(file));
+    }
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        const config = { headers: { "Content-Type": "multipart/form-data" } }
+        const newForm = new FormData();
+        newForm.append("name", name);
+        newForm.append("email", email);
+        newForm.append("password", password);
+        newForm.append("file", avatar);
+
+        await axios.post(`${server}/user/create-user`, newForm, config)
+            .then((res) => {
+                console.log(res);
+            }).catch((err) => {
+                console.log(err);
+            })
     }
 
     return (
