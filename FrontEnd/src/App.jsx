@@ -1,0 +1,171 @@
+import React, { useState } from 'react'
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
+import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage } from './Routes/Routes.js'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useEffect } from 'react';
+import Store from './redux/store.js';
+import { loadSeller, loadUser } from './redux/actions/user.js';
+import ProtectedRoute from './Routes/ProtectedRoute.js';
+import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage } from './Routes/ShopRoutes.js';
+import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
+import { getAllProducts } from './redux/actions/product.js';
+import { getAllEvents } from './redux/actions/event.js';
+import { server } from './server.js';
+import axios from 'axios';
+import { Elements } from "@stripe/react-stripe-js"
+import { loadStripe } from "@stripe/stripe-js"
+
+const App = () => {
+  const [stripeApiKey, setStripeApiKey] = useState("");
+
+  async function getStripeApiKey() {
+    const { data } = await axios.get(`${server}/payment/stripeapikey`);
+    setStripeApiKey(data?.stripeApikey);
+  }
+
+  useEffect(() => {
+    Store.dispatch(loadUser());
+    Store.dispatch(loadSeller());
+    Store.dispatch(getAllProducts());
+    Store.dispatch(getAllEvents());
+    getStripeApiKey();
+  }, []);
+
+  // Create a wrapper component for routes that need Stripe
+  const StripeWrapper = ({ children }) => {
+    if (!stripeApiKey) {
+      return null; // or a loading spinner
+    }
+    return (
+      <Elements stripe={loadStripe(stripeApiKey)}>
+        {children}
+      </Elements>
+    );
+  };
+
+  return (
+    <>
+      <Router>
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          closeOnClick
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          hideProgressBar={false}
+          newestOnTop={false}
+          style={{ zIndex: 99999 }}
+        />
+
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/sign-up" element={<SignupPage />} />
+          <Route path="/activation/:activation_token" element={<ActivationPage />} />
+          <Route path="/seller/activation/:activation_token" element={<SellerActivationPage />} />
+          <Route path="/products" element={<ProductPage />} />
+          <Route path="/product/:id" element={<ProductDetailsPage />} />
+          <Route path="/checkout" element={<Checkoutpage />} />
+
+          {/* Payment route with Stripe wrapper */}
+          <Route
+            path="/payment"
+            element={
+              <ProtectedRoute>
+                <StripeWrapper>
+                  <Paymentpage />
+                </StripeWrapper>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="/shop/preview/:id" element={<ShopPreviewPage />} />
+          <Route path="/best-selling" element={<BestSellingPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/order/success/:id" element={<OrderSuccessPage />} />
+
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfilePage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Shop routes */}
+          <Route path="/shop-create" element={<ShopCreatePage />} />
+          <Route path="/shop-login" element={<ShopLoginPage />} />
+
+          <Route
+            path="/shop/:id"
+            element={
+              <SellerProtectedRoute>
+                <ShopHomePage />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard"
+            element={
+              <SellerProtectedRoute>
+                <ShopDashboardPage />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-create-product"
+            element={
+              <SellerProtectedRoute>
+                <ShopCreateProductPage />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-products"
+            element={
+              <SellerProtectedRoute>
+                <ShopAllProducts />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-create-event"
+            element={
+              <SellerProtectedRoute>
+                <ShopCreateEvents />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-events"
+            element={
+              <SellerProtectedRoute>
+                <ShopAllEvents />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-coupons"
+            element={
+              <SellerProtectedRoute>
+                <ShopAllCoupouns />
+              </SellerProtectedRoute>
+            }
+          />
+        </Routes>
+      </Router>
+    </>
+  )
+}
+
+export default App
