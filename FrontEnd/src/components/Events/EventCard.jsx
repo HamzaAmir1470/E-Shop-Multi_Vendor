@@ -1,16 +1,46 @@
-import React from "react";
+import React, { useState } from "react";
 import styles from "../../styles/styles";
 import CountDown from "./CountDown.jsx";
 import { backend_url } from "../../server.js";
+import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { addToCart } from "../../redux/actions/cart.js";
+import { toast } from "react-toastify";
 
 const EventCard = ({ active, data }) => {
+    const dispatch = useDispatch();
+    const cart = useSelector((state) => state.cart);
+    const [quantity, setQuantity] = useState(1);
+
+    const addtoCartHandler = (e, data) => {
+        e?.stopPropagation();
+
+        // Check if item already in cart
+        const isItemExist = cart?.cart?.find((item) => item._id === data._id);
+        if (isItemExist) {
+            toast.error("Item already in cart!");
+            return;
+        }
+
+        // Check if stock is available
+        if (data.stock < quantity) {
+            toast.error(`Only ${data.stock} items available!`);
+            return;
+        }
+
+        // Add to cart
+        const cartData = { ...data, qty: quantity };
+        dispatch(addToCart(cartData));
+        toast.success(`Added ${quantity} item(s) to cart!`);
+    };
+
     return (
         <div
             className={`w-full md:mt-0 mt-20 bg-white rounded-2xl transition-all duration-300 overflow-hidden flex flex-col lg:flex-row shadow-lg hover:shadow-2xl ${active ? "mb-0" : "mb-12"
                 }`}
         >
             {/* Image Section with Overlay Badge */}
-            <div className="w-full lg:w-3/5 h-56 lg:h-100 relative group flex justify-center items-center bg-gradient-to-br from-gray-50 to-white ">
+            <div className="w-full lg:w-3/5 h-56 lg:h-100 relative group flex justify-center items-center bg-gradient-to-br from-gray-50 to-white">
                 <div className="absolute top-3 left-3 z-10 bg-gradient-to-r from-red-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md">
                     🔥 Flash Sale
                 </div>
@@ -23,6 +53,7 @@ const EventCard = ({ active, data }) => {
                     />
                 </div>
             </div>
+
             {/* Content Section */}
             <div className="w-full lg:w-1/2 p-6 sm:p-8 flex flex-col justify-center gap-5 bg-gradient-to-br from-white to-gray-50">
                 {/* Product Title */}
@@ -66,9 +97,8 @@ const EventCard = ({ active, data }) => {
                     <CountDown data={data} />
                 </div>
 
-                {/* Progress Bar - Optional (if you want to show stock progress) */}
                 {data?.stock && data?.sold && (
-                    <div className="w-full mt-4">
+                    <div className="w-full mt-2">
                         <div className="flex justify-between text-xs text-gray-600 mb-1">
                             <span>Sold: {data.sold}</span>
                             <span>Available: {data.stock}</span>
@@ -82,9 +112,53 @@ const EventCard = ({ active, data }) => {
                     </div>
                 )}
 
+                {/* Quantity Selector */}
+                <div className="flex items-center gap-4 mt-2">
+                    <span className="text-sm font-medium text-gray-700">Quantity:</span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                            className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center font-bold"
+                            disabled={quantity <= 1}
+                        >
+                            -
+                        </button>
+                        <span className="w-12 text-center font-semibold text-gray-800">{quantity}</span>
+                        <button
+                            onClick={() =>
+                                setQuantity(Math.min(data?.stock || 10, quantity + 1))
+                            }
+                            className="w-8 h-8 rounded-full bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors duration-200 flex items-center justify-center font-bold"
+                            disabled={quantity >= (data?.stock || 10)}
+                        >
+                            +
+                        </button>
+                    </div>
+                    <span className="text-xs text-gray-500">Max: {data?.stock || 10}</span>
+                </div>
+
+                {/* Action Buttons Row */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 mt-2">
+                    <Link to={`/product/${data?._id}?isEvent=true`} className="w-full sm:w-auto">
+                        <button
+                            className="w-full sm:w-auto px-8 py-2.5 bg-gradient-to-r from-[#3321c8] to-[#4a3ad6] text-white font-semibold text-sm rounded-lg hover:from-[#2a1ab0] hover:to-[#3d2ec4] transition-all duration-300 shadow-md hover:shadow-lg active:scale-95"
+                        >
+                            See Details
+                        </button>
+                    </Link>
+
+                    {/* Add to Cart Button for events */}
+                    <button
+                        className="w-full sm:w-auto px-8 py-2.5 bg-white border-2 border-[#3321c8] text-[#3321c8] font-semibold text-sm rounded-lg hover:bg-[#3321c8] hover:text-white transition-all duration-300 active:scale-95"
+                        onClick={(e) => addtoCartHandler(e, data)}
+                    >
+                        Add to Cart
+                    </button>
+                </div>
+
                 {/* Shop Info - Optional */}
                 {data?.shop && (
-                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+                    <div className="flex items-center gap-3 mt-2 pt-4 border-t border-gray-100">
                         <img
                             src={`${backend_url}${data.shop.avatar}`}
                             alt={data.shop.name}

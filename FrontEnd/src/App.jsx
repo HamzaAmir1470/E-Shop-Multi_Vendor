@@ -73,7 +73,11 @@ const App = () => {
           <Route path="/seller/activation/:activation_token" element={<SellerActivationPage />} />
           <Route path="/products" element={<ProductPage />} />
           <Route path="/product/:id" element={<ProductDetailsPage />} />
-          <Route path="/checkout" element={<Checkoutpage />} />
+          <Route path="/checkout" element={
+            <ProtectedRoute>
+              <Checkoutpage />
+            </ProtectedRoute>
+          } />
 
           {/* Payment route with Stripe wrapper */}
           <Route

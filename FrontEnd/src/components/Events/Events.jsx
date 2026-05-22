@@ -9,6 +9,8 @@ const Events = () => {
         window.scrollTo(0, 0);
     }, []);
 
+    const hasEvents = Array.isArray(allEvents) && allEvents.length > 0;
+
     return (
         <div>
             {
@@ -18,7 +20,13 @@ const Events = () => {
                             <h1>Popular Events</h1>
                         </div>
                         <div className="w-full grid">
-                            <EventCard data={allEvents && allEvents[0]} />
+                            {hasEvents ? (
+                                <EventCard data={allEvents[0]} />
+                            ) : (
+                                <p className="py-12 text-center text-lg font-medium text-gray-600">
+                                    No current events
+                                </p>
+                            )}
                         </div>
                     </div>
                 )
