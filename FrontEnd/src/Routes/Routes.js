@@ -14,6 +14,10 @@ import Paymentpage from '../pages/Paymentpage.jsx';
 import ShopCreatePage from '../pages/ShopCreatePage.jsx';
 import SellerActivationPage from '../pages/SellerActivationPage.jsx';
 import ShopLoginPage from '../pages/ShopLoginPage.jsx';
+import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
+import SellerForgotPasswordPage from '../pages/SellerForgotPasswordPage.jsx';
+import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
+import SellerResetPasswordPage from '../pages/SellerResetPasswordPage.jsx';
 export {
     LoginPage,
     SignupPage,
@@ -31,4 +35,8 @@ export {
     ShopCreatePage,
     SellerActivationPage,
     ShopLoginPage,
+    ForgotPasswordPage,
+    SellerForgotPasswordPage,
+    ResetPasswordPage,
+    SellerResetPasswordPage,
 };

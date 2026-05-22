@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
-import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage } from './Routes/Routes.js'
+import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage, ForgotPasswordPage, SellerForgotPasswordPage, ResetPasswordPage, SellerResetPasswordPage } from './Routes/Routes.js'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
@@ -68,6 +68,8 @@ const App = () => {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
           <Route path="/sign-up" element={<SignupPage />} />
           <Route path="/activation/:activation_token" element={<ActivationPage />} />
           <Route path="/seller/activation/:activation_token" element={<SellerActivationPage />} />
@@ -109,6 +111,8 @@ const App = () => {
           {/* Shop routes */}
           <Route path="/shop-create" element={<ShopCreatePage />} />
           <Route path="/shop-login" element={<ShopLoginPage />} />
+          <Route path="/seller/forgot-password" element={<SellerForgotPasswordPage />} />
+          <Route path="/seller/reset-password/:token" element={<SellerResetPasswordPage />} />
 
           <Route
             path="/shop/:id"

@@ -4,6 +4,7 @@ const router = express.Router();
 const Shop = require('../model/shop');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const sendMail = require('../utils/sendMail');
 const sendToken = require('../utils/jwtToken');
 const { isAuthenticated, isSeller } = require('../middlewares/auth');
@@ -78,6 +79,10 @@ const createActivationToken = (seller) => {
     return jwt.sign(seller, process.env.ACTIVATION_SECRET, {
         expiresIn: '15hrs',
     });
+};
+
+const createResetPasswordToken = () => {
+    return crypto.randomBytes(20).toString("hex");
 };
 
 // activate shop account
@@ -166,6 +171,83 @@ router.post("/login-shop", catchAsyncErrors(async (req, res, next) => {
         }
         sendShopToken(user, 201, res);
 
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
+
+// Forgot password
+router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return next(new ErrorHandler("Please provide your email address", 400));
+        }
+
+        const seller = await Shop.findOne({ email });
+
+        if (!seller) {
+            return next(new ErrorHandler("Seller not found", 404));
+        }
+
+        const resetToken = createResetPasswordToken();
+        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+        seller.resetPasswordToken = hashedToken;
+        seller.resetPasswordTime = Date.now() + 15 * 60 * 1000;
+
+        await seller.save({ validateBeforeSave: false });
+
+        const resetUrl = `http://localhost:5173/seller/reset-password/${resetToken}`;
+
+        await sendMail({
+            email: seller.email,
+            subject: "Reset your shop password",
+            message: `Hello ${seller.name},\n\nYou requested a password reset for your shop account. Please click the link below to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset link sent to your email address",
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
+
+// Reset password
+router.put("/reset-password/:token", catchAsyncErrors(async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const { password, confirmPassword } = req.body;
+
+        if (!password || !confirmPassword) {
+            return next(new ErrorHandler("Please provide password and confirm password", 400));
+        }
+
+        if (password !== confirmPassword) {
+            return next(new ErrorHandler("Passwords do not match", 400));
+        }
+
+        const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        const seller = await Shop.findOne({
+            resetPasswordToken,
+            resetPasswordTime: { $gt: Date.now() },
+        }).select("+password");
+
+        if (!seller) {
+            return next(new ErrorHandler("Password reset token is invalid or has expired", 400));
+        }
+
+        seller.password = password;
+        seller.resetPasswordToken = undefined;
+        seller.resetPasswordTime = undefined;
+
+        await seller.save();
+
+        sendToken(seller, 200, res);
     } catch (error) {
         return next(new ErrorHandler(error.message, 500));
     }

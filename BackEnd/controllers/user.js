@@ -6,6 +6,7 @@ const { upload } = require('../multer');
 const ErrorHandler = require('../utils/ErrorHandler');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const sendMail = require('../utils/sendMail');
 const sendToken = require('../utils/jwtToken');
@@ -77,6 +78,10 @@ const createActivationToken = (user) => {
     });
 };
 
+const createResetPasswordToken = () => {
+    return crypto.randomBytes(20).toString("hex");
+};
+
 // activate user account
 router.post("/activation", catchAsyncErrors(async (req, res, next) => {
     try {
@@ -126,6 +131,83 @@ router.post("/login-user", catchAsyncErrors(async (req, res, next) => {
         }
         sendToken(user, 201, res);
 
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
+
+// Forgot password
+router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return next(new ErrorHandler("Please provide your email address", 400));
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return next(new ErrorHandler("User not found", 404));
+        }
+
+        const resetToken = createResetPasswordToken();
+        const hashedToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+        user.resetPasswordToken = hashedToken;
+        user.resetPasswordTime = Date.now() + 15 * 60 * 1000;
+
+        await user.save({ validateBeforeSave: false });
+
+        const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+        await sendMail({
+            email: user.email,
+            subject: "Reset your password",
+            message: `Hello ${user.name},\n\nYou requested a password reset. Please click the link below to set a new password:\n${resetUrl}\n\nIf you did not request this, you can ignore this email.`,
+        });
+
+        res.status(200).json({
+            success: true,
+            message: "Password reset link sent to your email address",
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
+
+// Reset password
+router.put("/reset-password/:token", catchAsyncErrors(async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const { password, confirmPassword } = req.body;
+
+        if (!password || !confirmPassword) {
+            return next(new ErrorHandler("Please provide password and confirm password", 400));
+        }
+
+        if (password !== confirmPassword) {
+            return next(new ErrorHandler("Passwords do not match", 400));
+        }
+
+        const resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex");
+
+        const user = await User.findOne({
+            resetPasswordToken,
+            resetPasswordTime: { $gt: Date.now() },
+        }).select("+password");
+
+        if (!user) {
+            return next(new ErrorHandler("Password reset token is invalid or has expired", 400));
+        }
+
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordTime = undefined;
+
+        await user.save();
+
+        sendToken(user, 200, res);
     } catch (error) {
         return next(new ErrorHandler(error.message, 500));
     }
