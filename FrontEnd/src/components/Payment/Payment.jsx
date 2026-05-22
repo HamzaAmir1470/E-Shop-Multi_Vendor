@@ -334,6 +334,8 @@ const Payment = () => {
             orderId: firstOrderId,
             paymentMethod: method,
             amount: orderData.totalPrice,
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
             paymentDetails: paymentDetails,
           }
         });
@@ -363,6 +365,8 @@ const Payment = () => {
             orderId: orderResponse.orderId,
             paymentMethod: method,
             amount: orderData.totalPrice,
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
             paymentDetails: paymentDetails
           }
         });
