@@ -494,8 +494,11 @@ const ShippingInfo = ({
                         >
                             <option value="">Select your city</option>
                             {shippingInfo.country &&
-                                City.getCitiesOfCountry(shippingInfo.country).map((item) => (
-                                    <option key={item.isoCode} value={item.isoCode}>
+                                City.getCitiesOfCountry(shippingInfo.country).map((item, index) => (
+                                    <option
+                                        key={`${item.name}-${item.stateCode || "NA"}-${item.countryCode || shippingInfo.country}-${index}`}
+                                        value={item.isoCode || item.name}
+                                    >
                                         {item.name}
                                     </option>
                                 ))}

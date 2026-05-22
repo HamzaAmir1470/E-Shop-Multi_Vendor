@@ -7,8 +7,16 @@ const bodyParser = require("body-parser");
 const cors = require('cors');
 
 // Middlewares
+const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
 app.use(cors({
-    origin: "http://localhost:5173",
+    origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+
+        callback(new Error(`Not allowed by CORS: ${origin}`));
+    },
     credentials: true
 }));
 
@@ -32,6 +40,7 @@ const product = require('./controllers/product');
 const event = require('./controllers/event');
 const coupoun = require('./controllers/coupounCode');
 const payment = require('./controllers/payment');
+const order = require('./controllers/order');
 
 // Route Middlewares
 app.use('/api/v2/product', product);
@@ -40,6 +49,7 @@ app.use('/api/v2/shop', shop);
 app.use('/api/v2/event', event);
 app.use('/api/v2/coupoun', coupoun);
 app.use('/api/v2/payment', payment);
+app.use('/api/v2/order', order);
 
 // Error Handler
 app.use(ErrorHandler);

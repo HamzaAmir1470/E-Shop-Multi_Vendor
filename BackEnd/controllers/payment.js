@@ -3,11 +3,11 @@ const router = express.Router()
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const catchAsyncErrors = require("../middlewares/catchAsyncErrors")
 
-router.post("/payment/process", catchAsyncErrors(async (req, res, next) => {
+router.post("/process", catchAsyncErrors(async (req, res, next) => {
     const myPayment = await stripe.paymentIntents.create({
         amount: req.body.amount,
         currency: "USD",
-        metaData: {
+        metadata: {
             company: "Sultan's Shop"
         },
     });

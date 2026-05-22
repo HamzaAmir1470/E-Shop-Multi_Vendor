@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const Order = require('../model/order');
-const ErrorHandler = require('../utils/errorHandler');
-const catchAsyncErrors = require('../middleware/catchAsyncErrors');
-const { isAuthenticated } = require('../middleware/auth');
+const ErrorHandler = require('../utils/ErrorHandler');
+const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
+const { isAuthenticated } = require('../middlewares/auth');
 const Product = require('../model/product');
 
 // Create a new order
@@ -13,13 +13,14 @@ router.post('/create-order', isAuthenticated, catchAsyncErrors(async (req, res, 
 
         // group cart items by shopid
         const shopItemsMap = new Map();
-        for(const item of cart) {
-            const product = await Product.findById(item.product);
-            if(!product) {
+        for (const item of cart) {
+            const productId = item.product || item._id;
+            const product = await Product.findById(productId);
+            if (!product) {
                 return next(new ErrorHandler('Product not found', 404));
             }
             const shopId = product.shop._id;
-            if(!shopItemsMap.has(shopId)) {
+            if (!shopItemsMap.has(shopId)) {
                 shopItemsMap.set(shopId, []);
             }
             shopItemsMap.get(shopId).push(item);
@@ -27,7 +28,7 @@ router.post('/create-order', isAuthenticated, catchAsyncErrors(async (req, res, 
 
         // create separate order for each shop
         const orders = [];
-        for(const [shopId, items] of shopItemsMap) {
+        for (const [shopId, items] of shopItemsMap) {
             const order = new Order({
                 cart: items,
                 shippingAddress,

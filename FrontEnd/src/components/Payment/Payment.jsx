@@ -23,95 +23,64 @@ const loadPayPalScript = (setPaypalReady) => {
 };
 
 // Card payment method component
-const CardPayment = ({ handlePayment }) => {
-  const [cardInfo, setCardInfo] = useState({
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: ''
-  });
+const CardPayment = ({ handlePayment, stripe, elements, amount }) => {
+  const [cardName, setCardName] = useState('');
   const [errors, setErrors] = useState({});
+  const [cardState, setCardState] = useState({
+    number: false,
+    expiry: false,
+    cvc: false,
+  });
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    let formattedValue = value;
-
-    // Format card number with spaces every 4 digits
-    if (name === 'cardNumber') {
-      formattedValue = value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
-      if (formattedValue.length > 19) return; // 16 digits + 3 spaces
-    }
-
-    // Format expiry date as MM/YY
-    if (name === 'expiryDate') {
-      formattedValue = value.replace(/\D/g, '');
-      if (formattedValue.length >= 2) {
-        formattedValue = formattedValue.slice(0, 2) + '/' + formattedValue.slice(2, 4);
-      }
-      if (formattedValue.length > 5) return;
-    }
-
-    // CVV max 4 digits
-    if (name === 'cvv') {
-      formattedValue = value.replace(/\D/g, '').slice(0, 4);
-    }
-
-    setCardInfo({ ...cardInfo, [name]: formattedValue });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
+  const stripeElementStyle = {
+    style: {
+      base: {
+        fontSize: '16px',
+        color: '#111827',
+        fontFamily: 'inherit',
+        '::placeholder': {
+          color: '#9CA3AF',
+        },
+      },
+      invalid: {
+        color: '#DC2626',
+      },
+    },
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Card number validation (16 digits)
-    const cardNumberClean = cardInfo.cardNumber.replace(/\s/g, '');
-    if (!cardNumberClean) {
-      newErrors.cardNumber = 'Card number is required';
-    } else if (!/^\d{16}$/.test(cardNumberClean)) {
-      newErrors.cardNumber = 'Card number must be 16 digits';
-    }
-
-    // Cardholder name validation
-    if (!cardInfo.cardName.trim()) {
-      newErrors.cardName = 'Cardholder name is required';
-    } else if (cardInfo.cardName.length < 3) {
-      newErrors.cardName = 'Enter full name as on card';
-    }
-
-    // Expiry date validation
-    if (!cardInfo.expiryDate) {
-      newErrors.expiryDate = 'Expiry date is required';
-    } else {
-      const [month, year] = cardInfo.expiryDate.split('/');
-      const currentDate = new Date();
-      const currentYear = currentDate.getFullYear() % 100;
-      const currentMonth = currentDate.getMonth() + 1;
-
-      if (parseInt(month) < 1 || parseInt(month) > 12) {
-        newErrors.expiryDate = 'Invalid month';
-      } else if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
-        newErrors.expiryDate = 'Card has expired';
-      }
-    }
-
-    // CVV validation
-    if (!cardInfo.cvv) {
-      newErrors.cvv = 'CVV is required';
-    } else if (!/^\d{3,4}$/.test(cardInfo.cvv)) {
-      newErrors.cvv = 'CVV must be 3 or 4 digits';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      handlePayment('card', cardInfo);
+
+    const nextErrors = {};
+
+    if (!cardName.trim()) {
+      nextErrors.cardName = 'Cardholder name is required';
     }
+
+    if (!cardState.number) {
+      nextErrors.cardNumber = 'Card number is incomplete';
+    }
+
+    if (!cardState.expiry) {
+      nextErrors.expiryDate = 'Expiry date is incomplete';
+    }
+
+    if (!cardState.cvc) {
+      nextErrors.cvv = 'CVV is incomplete';
+    }
+
+    setErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) {
+      return;
+    }
+
+    await handlePayment('card', {
+      cardName: cardName.trim(),
+      amount,
+      stripe,
+      elements,
+    });
   };
 
   return (
@@ -120,15 +89,9 @@ const CardPayment = ({ handlePayment }) => {
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Card Number <span className="text-red-500">*</span>
         </label>
-        <input
-          type="text"
-          name="cardNumber"
-          value={cardInfo.cardNumber}
-          onChange={handleChange}
-          placeholder="1234 5678 9012 3456"
-          className={`${styles.input} w-full ${errors.cardNumber ? 'border-red-500' : ''}`}
-          maxLength="19"
-        />
+        <div className={`w-full border rounded-lg px-3 py-3 bg-white ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}>
+          <CardNumberElement options={stripeElementStyle} onChange={(event) => setCardState((prev) => ({ ...prev, number: event.complete }))} />
+        </div>
         {errors.cardNumber && (
           <p className="text-red-500 text-xs mt-1">{errors.cardNumber}</p>
         )}
@@ -141,8 +104,13 @@ const CardPayment = ({ handlePayment }) => {
         <input
           type="text"
           name="cardName"
-          value={cardInfo.cardName}
-          onChange={handleChange}
+          value={cardName}
+          onChange={(e) => {
+            setCardName(e.target.value);
+            if (errors.cardName) {
+              setErrors((prev) => ({ ...prev, cardName: '' }));
+            }
+          }}
           placeholder="As shown on card"
           className={`${styles.input} w-full ${errors.cardName ? 'border-red-500' : ''}`}
         />
@@ -156,15 +124,9 @@ const CardPayment = ({ handlePayment }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Expiry Date <span className="text-red-500">*</span>
           </label>
-          <input
-            type="text"
-            name="expiryDate"
-            value={cardInfo.expiryDate}
-            onChange={handleChange}
-            placeholder="MM/YY"
-            className={`${styles.input} w-full ${errors.expiryDate ? 'border-red-500' : ''}`}
-            maxLength="5"
-          />
+          <div className={`w-full border rounded-lg px-3 py-3 bg-white ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}>
+            <CardExpiryElement options={stripeElementStyle} onChange={(event) => setCardState((prev) => ({ ...prev, expiry: event.complete }))} />
+          </div>
           {errors.expiryDate && (
             <p className="text-red-500 text-xs mt-1">{errors.expiryDate}</p>
           )}
@@ -174,15 +136,9 @@ const CardPayment = ({ handlePayment }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             CVV <span className="text-red-500">*</span>
           </label>
-          <input
-            type="password"
-            name="cvv"
-            value={cardInfo.cvv}
-            onChange={handleChange}
-            placeholder="123"
-            className={`${styles.input} w-full ${errors.cvv ? 'border-red-500' : ''}`}
-            maxLength="4"
-          />
+          <div className={`w-full border rounded-lg px-3 py-3 bg-white ${errors.cvv ? 'border-red-500' : 'border-gray-300'}`}>
+            <CardCvcElement options={stripeElementStyle} onChange={(event) => setCardState((prev) => ({ ...prev, cvc: event.complete }))} />
+          </div>
           {errors.cvv && (
             <p className="text-red-500 text-xs mt-1">{errors.cvv}</p>
           )}
@@ -191,9 +147,10 @@ const CardPayment = ({ handlePayment }) => {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+        disabled={!stripe || !elements}
+        className="w-full bg-blue-600 disabled:bg-blue-400 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
       >
-        Pay Now
+        {!stripe || !elements ? 'Loading payment form...' : `Pay $${Number(amount || 0).toFixed(2)}`}
       </button>
     </form>
   );
@@ -333,7 +290,7 @@ const Payment = () => {
     window.scrollTo(0, 0);
   }, [navigate]);
 
-  const handlePayment = async (method, paymentDetails = null) => {
+  const finalizePayment = async (method, paymentDetails = null) => {
     if (!orderData) {
       toast.error('Order data not found');
       return;
@@ -342,22 +299,46 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      // Prepare payment data
-      const paymentData = {
-        orderData,
-        paymentMethod: method,
-        userId: user?._id,
-        paymentDetails: paymentDetails
-      };
-
-      // In production, you would:
-      // 1. For card: Use Stripe
-      // 2. For PayPal: Already handled by PayPal
-      // 3. For COD: Just create order
-
       // Simulate API call for non-PayPal payments
-      if (method !== 'paypal') {
+      if (method !== 'paypal' && method !== 'card') {
         await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+
+      if (method === 'card') {
+        const { data } = await axios.post(
+          `${server}/order/create-order`,
+          {
+            cart: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            totalPrice: Number(orderData.totalPrice),
+            paymentInfo: {
+              id: paymentDetails?.paymentIntentId,
+              status: 'succeeded',
+              type: 'card',
+            },
+          },
+          { withCredentials: true }
+        );
+
+        if (!data?.success) {
+          throw new Error('Order could not be created');
+        }
+
+        const firstOrderId = data?.orders?.[0]?._id || data?.orders?.[0]?.id || `ORD${Date.now()}`;
+
+        localStorage.removeItem('latestOrder');
+        toast.success('Card payment successful! Order placed successfully!');
+
+        navigate(`/order/success/${firstOrderId}`, {
+          state: {
+            orderId: firstOrderId,
+            paymentMethod: method,
+            amount: orderData.totalPrice,
+            paymentDetails: paymentDetails,
+          }
+        });
+
+        return;
       }
 
       // Mock successful payment (for demonstration)
@@ -377,7 +358,7 @@ const Payment = () => {
         toast.success(orderResponse.message);
 
         // Navigate to success page with order details
-        navigate('/order-success', {
+        navigate(`/order/success/${orderResponse.orderId}`, {
           state: {
             orderId: orderResponse.orderId,
             paymentMethod: method,
@@ -389,6 +370,69 @@ const Payment = () => {
     } catch (error) {
       console.error('Payment error:', error);
       toast.error(error.response?.data?.message || 'Payment failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePayment = async (method, paymentDetails = null) => {
+    if (method !== 'card') {
+      await finalizePayment(method, paymentDetails);
+      return;
+    }
+
+    if (!stripe || !elements) {
+      toast.error('Payment form is still loading. Please try again.');
+      return;
+    }
+
+    if (!orderData) {
+      toast.error('Order data not found');
+      return;
+    }
+
+    const cardNumberElement = elements.getElement(CardNumberElement);
+
+    if (!cardNumberElement) {
+      toast.error('Card details are not ready yet');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const amountInCents = Math.round(Number(orderData.totalPrice) * 100);
+
+      const { data } = await axios.post(`${server}/payment/process`, {
+        amount: amountInCents,
+      });
+
+      const result = await stripe.confirmCardPayment(data.client_secret, {
+        payment_method: {
+          card: cardNumberElement,
+          billing_details: {
+            name: paymentDetails?.cardName || orderData.shippingAddress?.fullName || user?.name || 'Customer',
+            email: user?.email,
+          },
+        },
+      });
+
+      if (result.error) {
+        toast.error(result.error.message || 'Card payment failed');
+        return;
+      }
+
+      if (result.paymentIntent?.status === 'succeeded') {
+        await finalizePayment('card', {
+          paymentIntentId: result.paymentIntent.id,
+          cardName: paymentDetails?.cardName || orderData.shippingAddress?.fullName || user?.name || 'Customer',
+        });
+      } else {
+        toast.error('Card payment was not completed');
+      }
+    } catch (error) {
+      console.error('Card payment error:', error);
+      toast.error(error.response?.data?.message || 'Card payment failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -462,7 +506,12 @@ const Payment = () => {
 
               {/* Payment Method Content */}
               {paymentMethod === 'card' ? (
-                <CardPayment handlePayment={handlePayment} />
+                <CardPayment
+                  handlePayment={handlePayment}
+                  stripe={stripe}
+                  elements={elements}
+                  amount={orderData?.totalPrice}
+                />
               ) : paymentMethod === 'paypal' ? (
                 <PayPalPayment
                   amount={orderData?.totalPrice}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
 import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage } from './Routes/Routes.js'
 import { ToastContainer } from 'react-toastify';
@@ -20,8 +20,13 @@ const App = () => {
   const [stripeApiKey, setStripeApiKey] = useState("");
 
   async function getStripeApiKey() {
-    const { data } = await axios.get(`${server}/payment/stripeapikey`);
-    setStripeApiKey(data?.stripeApikey);
+    try {
+      const { data } = await axios.get(`${server}/payment/stripeapikey`);
+      setStripeApiKey(data?.stripeApikey || "");
+    } catch (error) {
+      console.error("Unable to load Stripe API key:", error);
+      setStripeApiKey("");
+    }
   }
 
   useEffect(() => {
@@ -32,13 +37,14 @@ const App = () => {
     getStripeApiKey();
   }, []);
 
-  // Create a wrapper component for routes that need Stripe
+  const stripePromise = useMemo(() => {
+    return stripeApiKey ? loadStripe(stripeApiKey) : Promise.resolve(null);
+  }, [stripeApiKey]);
+
+  // Wrapper for routes that need Stripe context. Do not block route rendering.
   const StripeWrapper = ({ children }) => {
-    if (!stripeApiKey) {
-      return null; // or a loading spinner
-    }
     return (
-      <Elements stripe={loadStripe(stripeApiKey)}>
+      <Elements stripe={stripePromise}>
         {children}
       </Elements>
     );
