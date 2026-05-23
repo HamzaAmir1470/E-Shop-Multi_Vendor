@@ -10,7 +10,6 @@ import { toast } from "react-toastify";
 import { getAllOrdersUser } from '../redux/actions/order.js';
 
 
-
 const UserOrderDetails = () => {
   const { orders } = useSelector((state) => state.order);
   const { user } = useSelector((state) => state.user);
@@ -135,9 +134,9 @@ const UserOrderDetails = () => {
                 </div>
                 {
                   data?.Status === "Delivered" && (
-                    <btn className="flex items-center gap-2 mt-2">
-                      <span className="text-green-500">Write a review</span>
-                    </btn>
+                    <div className={`${styles.button} text-white`}>
+                      Feedback
+                    </div>
                   )
                 }
               </div>
