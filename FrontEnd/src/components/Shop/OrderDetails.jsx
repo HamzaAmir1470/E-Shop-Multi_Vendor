@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { BsFillBagFill } from "react-icons/bs";
-import { FaTruck } from "react-icons/fa";
+import { FaTruck, FaPaypal, FaCreditCard } from "react-icons/fa";
+import { MdMoneyOffCsred } from "react-icons/md";
 import styles from "../../styles/styles.js";
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
@@ -33,6 +34,38 @@ const OrderDetails = () => {
             case 'Shipping': return 'text-blue-600 bg-blue-50';
             case 'Processing': return 'text-yellow-600 bg-yellow-50';
             default: return 'text-gray-600 bg-gray-50';
+        }
+    }
+
+    const getPaymentMethodIcon = (type) => {
+        switch (type?.toLowerCase()) {
+            case 'paypal':
+                return <FaPaypal className="text-blue-600 text-sm" />;
+            case 'card':
+            case 'credit card':
+            case 'stripe':
+                return <FaCreditCard className="text-purple-600 text-sm" />;
+            case 'cod':
+            case 'cash on delivery':
+                return <MdMoneyOffCsred className="text-green-600 text-sm" />;
+            default:
+                return <FaCreditCard className="text-gray-600 text-sm" />;
+        }
+    }
+
+    const getPaymentMethodName = (type) => {
+        switch (type?.toLowerCase()) {
+            case 'paypal':
+                return 'PayPal';
+            case 'card':
+            case 'credit card':
+            case 'stripe':
+                return 'Credit / Debit Card';
+            case 'cod':
+            case 'cash on delivery':
+                return 'Cash on Delivery';
+            default:
+                return type?.toUpperCase() || 'Card';
         }
     }
 
@@ -71,6 +104,13 @@ const OrderDetails = () => {
                     <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500">Placed on:</span>
                         <span className="text-sm font-medium text-gray-800">{data?.createdAt?.split('T')[0]}</span>
+                    </div>
+                    <div className="w-px h-4 bg-gray-300"></div>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">Status:</span>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(data?.Status)}`}>
+                            {data?.Status}
+                        </span>
                     </div>
                 </div>
 
@@ -139,12 +179,41 @@ const OrderDetails = () => {
                         </div>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between items-center">
+                                <span className="text-gray-600">Method:</span>
+                                <div className="flex items-center gap-2">
+                                    {getPaymentMethodIcon(data?.paymentInfo?.type)}
+                                    <span className="text-gray-800 font-medium">
+                                        {getPaymentMethodName(data?.paymentInfo?.type)}
+                                    </span>
+                                </div>
+                            </div>
+                            <div className="flex justify-between items-center">
                                 <span className="text-gray-600">Status:</span>
                                 <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${data?.paymentInfo?.status === "succeeded"
                                         ? "bg-green-100 text-green-700"
-                                        : "bg-red-100 text-red-700"
+                                        : data?.paymentInfo?.status === "pending"
+                                            ? "bg-yellow-100 text-yellow-700"
+                                            : "bg-red-100 text-red-700"
                                     }`}>
-                                    {data?.paymentInfo?.status === "succeeded" ? "Paid" : "Pending"}
+                                    {data?.paymentInfo?.status === "succeeded"
+                                        ? "Paid ✓"
+                                        : data?.paymentInfo?.status === "pending"
+                                            ? "Pending"
+                                            : data?.paymentInfo?.status}
+                                </span>
+                            </div>
+                            {data?.paymentInfo?.paidAt && (
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-600">Paid on:</span>
+                                    <span className="text-gray-800">
+                                        {new Date(data?.paymentInfo?.paidAt).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            )}
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-600">Transaction ID:</span>
+                                <span className="text-gray-800 text-xs font-mono">
+                                    {data?.paymentInfo?.id?.slice(0, 12)}...
                                 </span>
                             </div>
                             <div className="flex justify-between items-center">
@@ -158,7 +227,7 @@ const OrderDetails = () => {
                 {/* Order Status Update */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-5">
                     <h4 className='text-base font-semibold text-gray-800 mb-3'>
-                        Order Status
+                        Update Order Status
                     </h4>
                     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                         <div className="flex-1 w-full">
@@ -167,6 +236,7 @@ const OrderDetails = () => {
                                 onChange={(e) => setStatus(e.target.value)}
                                 className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all outline-none bg-white'
                             >
+                                <option value="">Select new status...</option>
                                 {[
                                     "Pending",
                                     "Processing",
@@ -185,7 +255,7 @@ const OrderDetails = () => {
                                             "Received",
                                             "On the way",
                                             "Delivered",
-                                        ].indexOf(data?.Status)
+                                        ].indexOf(data?.Status) + 1
                                     )
                                     .map((option, index) => (
                                         <option key={index} value={option}>
@@ -202,18 +272,6 @@ const OrderDetails = () => {
                             Update Status
                         </button>
                     </div>
-
-                    {/* Current Status Indicator */}
-                    {data?.Status && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="text-gray-600">Current:</span>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getStatusColor(data?.Status)}`}>
-                                    {data?.Status}
-                                </span>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>

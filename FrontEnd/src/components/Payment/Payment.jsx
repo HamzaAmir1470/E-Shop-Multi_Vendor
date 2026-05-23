@@ -299,11 +299,6 @@ const Payment = () => {
     setLoading(true);
 
     try {
-      // Simulate API call for non-PayPal payments
-      if (method !== 'paypal' && method !== 'card') {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-      }
-
       if (method === 'card') {
         const { data } = await axios.post(
           `${server}/order/create-order`,
@@ -328,6 +323,45 @@ const Payment = () => {
 
         localStorage.removeItem('latestOrder');
         toast.success('Card payment successful! Order placed successfully!');
+
+        navigate(`/order/success/${firstOrderId}`, {
+          state: {
+            orderId: firstOrderId,
+            paymentMethod: method,
+            amount: orderData.totalPrice,
+            items: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            paymentDetails: paymentDetails,
+          }
+        });
+
+        return;
+      }
+
+      if (method === 'cod') {
+        const { data } = await axios.post(
+          `${server}/order/create-order`,
+          {
+            cart: orderData.items,
+            shippingAddress: orderData.shippingAddress,
+            totalPrice: Number(orderData.totalPrice),
+            paymentInfo: {
+              id: `COD-${Date.now()}`,
+              status: 'Cash on Delivery',
+              type: 'cod',
+            },
+          },
+          { withCredentials: true }
+        );
+
+        if (!data?.success) {
+          throw new Error('Order could not be created');
+        }
+
+        const firstOrderId = data?.orders?.[0]?._id || data?.orders?.[0]?.id || `ORD${Date.now()}`;
+
+        localStorage.removeItem('latestOrder');
+        toast.success('Cash on delivery order placed successfully!');
 
         navigate(`/order/success/${firstOrderId}`, {
           state: {
