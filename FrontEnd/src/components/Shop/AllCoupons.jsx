@@ -25,7 +25,7 @@ const AllCoupons = () => {
 
     const dispatch = useDispatch();
 
-    // ✅ Extract fetchCoupons as a reusable function
+    //  Extract fetchCoupons as a reusable function
     const fetchCoupons = async () => {
         if (!seller?._id) return;
 
@@ -134,7 +134,7 @@ const AllCoupons = () => {
             {isLoading ? (
                 <Loader />
             ) : (
-                <div className="w-full ml-50 px-6 lg:px-10 py-6 mt-6 bg-gray-50 min-h-screen">
+               <div className="w-full px-4 sm:px-6 md:px-8 py-6 mt-6 bg-gray-50 min-h-screen">
                     <div className="bg-white rounded-xl shadow-md p-6">
                         <div className="mb-6 flex justify-between items-center">
                             <div>

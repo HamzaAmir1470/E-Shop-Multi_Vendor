@@ -25,6 +25,7 @@ import logo from "../../assets/logo.png";
 
 const Header = ({ activeHeading }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
+  const { isSeller } = useSelector((state) => state.seller);
   const navigate = useNavigate();
   const { cart } = useSelector((state) => state.cart);
   const { isAuthenticated, user } = useSelector((state) => state.user || {});
@@ -81,7 +82,7 @@ const Header = ({ activeHeading }) => {
 
   // Safe avatar URL with fallback
   const avatarSrc = user?.avatar?.url
-    ? `${backend_url}${user.avatar.url}`  // Removed extra slash
+    ? `${backend_url}${user.avatar.url}`
     : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
 
   const logoutHandler = () => {
@@ -233,8 +234,8 @@ const Header = ({ activeHeading }) => {
 
           {/* SELLER BUTTON */}
           <div className={styles.button}>
-            <Link to="/shop-login" className="flex items-center text-white">
-              Become Seller
+            <Link to="/dashboard" className="flex items-center text-white">
+              {isSeller ? "Go to Dashboard" : "Become a Seller"}
               <IoIosArrowForward className="ml-1" />
             </Link>
           </div>
@@ -511,7 +512,7 @@ const Header = ({ activeHeading }) => {
 
               <div className="mx-4">
                 <Link
-                  to="/shop-login"
+                  to="/dashboard"
                   onClick={() => setOpen(false)}
                   className="
                   group
@@ -527,7 +528,7 @@ const Header = ({ activeHeading }) => {
                 "
                 >
                   <span className="font-medium text-[15px] tracking-wide">
-                    Become a Seller
+                    {isSeller ? "Go to Dashboard" : "Become a Seller"}
                   </span>
 
                   <IoIosArrowForward

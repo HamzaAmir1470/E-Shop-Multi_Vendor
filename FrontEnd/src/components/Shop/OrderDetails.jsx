@@ -3,17 +3,18 @@ import { BsFillBagFill } from "react-icons/bs";
 import { FaTruck, FaPaypal, FaCreditCard } from "react-icons/fa";
 import { MdMoneyOffCsred } from "react-icons/md";
 import styles from "../../styles/styles.js";
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllOrdersShop } from '../../redux/actions/order.js';
-import { backend_url } from '../../server.js';
+import { backend_url, server } from '../../server.js';
 import { toast } from "react-toastify";
+import axios from 'axios';
 
 const OrderDetails = () => {
     const { orders, isLoading } = useSelector((state) => state.order);
     const { seller } = useSelector((state) => state.seller);
     const dispatch = useDispatch();
-
+    const navigate = useNavigate();
     const [status, setStatus] = React.useState("");
     const { id } = useParams();
 
@@ -23,9 +24,21 @@ const OrderDetails = () => {
 
     const data = orders?.find((item) => item._id === id);
 
-    const orderUpdateHandler = (e) => {
-        console.log("Order status updated to:", status);
-        toast.success("Order status updated successfully!");
+    const orderUpdateHandler = async (e) => {
+        await axios.put(`${server}/order/update-order-status/${id}`,
+            { status }, { withCredentials: true })
+            .then((res) => {
+                if (res.data.success) {
+                    console.log(res)
+                    toast.success("Order status updated successfully!");
+                    dispatch(getAllOrdersShop(seller._id));
+                    navigate("/dashboard-orders");
+                } else {
+                    toast.error(error.res.data.message);
+                }
+            }).catch((error) => {
+                toast.error("Failed to update order status.");
+            });
     }
 
     const getStatusColor = (status) => {
