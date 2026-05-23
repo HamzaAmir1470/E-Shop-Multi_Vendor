@@ -18,6 +18,8 @@ import ForgotPasswordPage from '../pages/ForgotPasswordPage.jsx';
 import SellerForgotPasswordPage from '../pages/SellerForgotPasswordPage.jsx';
 import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
 import SellerResetPasswordPage from '../pages/SellerResetPasswordPage.jsx';
+import OrderDetailsPage from '../pages/OrderDetailsPage.jsx';
+
 export {
     LoginPage,
     SignupPage,
@@ -39,4 +41,5 @@ export {
     SellerForgotPasswordPage,
     ResetPasswordPage,
     SellerResetPasswordPage,
+    OrderDetailsPage,
 };
