@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import Store from './redux/store.js';
 import { loadSeller, loadUser } from './redux/actions/user.js';
 import ProtectedRoute from './Routes/ProtectedRoute.js';
-import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage } from './Routes/ShopRoutes.js';
+import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails } from './Routes/ShopRoutes.js';
 import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
 import { getAllProducts } from './redux/actions/product.js';
 import { getAllEvents } from './redux/actions/event.js';
@@ -146,6 +146,22 @@ const App = () => {
             element={
               <SellerProtectedRoute>
                 <ShopAllProducts />
+              </SellerProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard-orders"
+            element={
+              <SellerProtectedRoute>
+                <ShopAllOrders />
+              </SellerProtectedRoute>
+            }
+          />
+          <Route
+            path="/order/:id"
+            element={
+              <SellerProtectedRoute>
+                <ShopOrderDetails />
               </SellerProtectedRoute>
             }
           />

@@ -48,6 +48,7 @@ router.post('/create-order', isAuthenticated, catchAsyncErrors(async (req, res, 
     }
 }));
 
+// Get all orders of a user
 router.get(
   "/get-all-orders/:userId",
   isAuthenticated,
@@ -68,4 +69,25 @@ router.get(
     }
   })
 );
+
+// Get all orders of a shop
+router.get(
+  "/get-seller-all-orders/:shopId",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const orders = await Order.find({
+        "cart.shopId": req.params.shopId,
+      }).sort({ createdAt: -1 });
+
+      res.status(200).json({
+        success: true,
+        orders,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+5
 module.exports = router;

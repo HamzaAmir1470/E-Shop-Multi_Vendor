@@ -13,6 +13,18 @@ export const getAllOrdersUser = (userId) => async (dispatch) => {
         dispatch({ type: "getAllOrdersUserFailed", payload: error.response.data.message });
     }
 };
+// GET ALL ORDERS OF Shop
+export const getAllOrdersShop = (shopId) => async (dispatch) => {
+    try {
+        dispatch({ type: "getAllOrdersShop" });
+        const { data } = await axios.get(`${server}/order/get-seller-all-orders/${shopId}`, {
+            withCredentials: true,
+        });
+        dispatch({ type: "getAllOrdersShopSuccess", payload: data.orders });
+    } catch (error) {
+        dispatch({ type: "getAllOrdersShopFailed", payload: error.response.data.message });
+    }
+};
 
 // CLEAR FLAGS
 export const clearOrderCreated = () => async (dispatch) => {
