@@ -48,4 +48,24 @@ router.post('/create-order', isAuthenticated, catchAsyncErrors(async (req, res, 
     }
 }));
 
+router.get(
+  "/get-all-orders/:userId",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+
+      const orders = await Order.find({
+        "user._id": req.user._id,
+      }).sort({ createdAt: -1 });
+
+      res.status(200).json({
+        success: true,
+        orders,
+      });
+
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
 module.exports = router;

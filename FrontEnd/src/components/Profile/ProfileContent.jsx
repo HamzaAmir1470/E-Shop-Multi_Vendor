@@ -13,6 +13,7 @@ import axios from "axios";
 import { Country, State, City } from "country-state-city";
 import { RxCross1 } from "react-icons/rx";
 import { updateUserAddress } from "../../redux/actions/user";
+import { getAllOrdersUser } from "../../redux/actions/order";
 
 const ProfileContent = ({ active }) => {
     const { user, error } = useSelector((state) => state.user);
@@ -132,7 +133,7 @@ const ProfileContent = ({ active }) => {
                                             if (inputValue.length > 0) {
                                                 // Remove leading zeros (except the first one) to prevent multiple zeros
                                                 const cleaned = inputValue.replace(/^0+/, '0');
-                                                
+
                                                 if (cleaned.length > 4) {
                                                     const formatted = `${cleaned.slice(0, 4)}-${cleaned.slice(4, 11)}`;
                                                     setPhoneNumber(formatted.replace(/-/g, '')); // Store without hyphen
@@ -212,18 +213,14 @@ const ProfileContent = ({ active }) => {
 };
 
 const AllOrders = () => {
-    const orders = [
-        {
-            _id: "00s9f0sdg0s8fg908ds09g8s09df8g09d8",
-            orderItems: [
-                {
-                    name: "Iphone 14 pro Max",
-                },
-            ],
-            totalPrice: 120,
-            orderStatus: "Processing",
-        },
-    ];
+    const { user } = useSelector((state) => state.user);
+    const { orders } = useSelector((state) => state.order);
+    const dispatch = useDispatch();
+    useEffect(() => {
+        if (user?._id) {
+            dispatch(getAllOrdersUser(user._id));
+        }
+    }, [dispatch, user]);
 
     const columns = [
         { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
@@ -265,14 +262,14 @@ const AllOrders = () => {
                 </Link>
             ),
         },
-    ];
-
-    const rows = orders.map((item) => ({
+    ]; 
+    
+    const rows = orders?.map((item) => ({
         id: item._id,
-        itemsQty: item.orderItems.length,
+        itemsQty: item.cart.length,
         total: `US$ ${item.totalPrice}`,
-        status: item.orderStatus,
-    }));
+        status: item.orderStatus || item.Status,
+    })) || [];
 
     return (
         <div className="w-full px-2 md:px-8 pt-4">
