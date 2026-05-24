@@ -23,6 +23,16 @@ const OrderDetails = () => {
     }, [dispatch, seller?._id]);
 
     const data = orders?.find((item) => item._id === id);
+    const checkoutGroupKey = data?.paymentInfo?.id || data?._id;
+    const groupedOrders = orders?.filter((item) => (item?.paymentInfo?.id || item?._id) === checkoutGroupKey) || [];
+    const groupedItems = groupedOrders.flatMap((order) =>
+        (order.cart || []).map((item) => ({
+            ...item,
+            __orderId: order._id,
+            __orderStatus: order.Status,
+        }))
+    );
+    const groupedTotalPrice = groupedOrders[0]?.totalPrice ?? data?.totalPrice;
 
     const hasReviewed = (item) => Boolean(item?.isReviewed);
 
@@ -135,7 +145,7 @@ const OrderDetails = () => {
                         Order Items
                     </h3>
                     <div className="space-y-3">
-                        {data && data.cart.map((item, index) => (
+                        {groupedItems.map((item, index) => (
                             <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                                 <img
                                     src={`${backend_url}/${item.images[0]}`}
@@ -165,7 +175,7 @@ const OrderDetails = () => {
                     <div className="border-t border-gray-200 mt-3 pt-3 text-right">
                         <div className="text-base">
                             <span className="text-gray-600">Total Price: </span>
-                            <strong className="text-xl text-pink-600">US$ {data?.totalPrice}</strong>
+                            <strong className="text-xl text-pink-600">US$ {groupedTotalPrice}</strong>
                         </div>
                     </div>
                 </div>

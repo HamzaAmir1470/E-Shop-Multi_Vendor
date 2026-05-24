@@ -26,9 +26,20 @@ const UserOrderDetails = () => {
 
   useEffect(() => {
     dispatch(getAllOrdersUser(user._id));
-  }, [dispatch]);
+  }, [dispatch, user?._id]);
 
   const data = orders?.find((item) => item._id === id);
+  const checkoutGroupKey = data?.paymentInfo?.id || data?._id;
+  const groupedOrders = orders?.filter((item) => (item?.paymentInfo?.id || item?._id) === checkoutGroupKey) || [];
+  const groupedItems = groupedOrders.flatMap((order) =>
+    (order.cart || []).map((item) => ({
+      ...item,
+      __orderId: order._id,
+      __orderStatus: order.Status,
+    }))
+  );
+  const isDeliveredOrder = groupedOrders.some((order) => order.Status === "Delivered");
+  const groupedTotalPrice = groupedOrders[0]?.totalPrice ?? data?.totalPrice;
 
   const reviewHandler = async (e) => {
     await axios.put(`${server}/order/create-new-review`, {
@@ -36,7 +47,7 @@ const UserOrderDetails = () => {
       rating,
       comment,
       productId: selectedItem._id,
-      orderId: id
+      orderId: selectedItem.__orderId || id
     }, { withCredentials: true })
       .then((res) => {
         toast.success(res.data.message);
@@ -138,7 +149,7 @@ const UserOrderDetails = () => {
             Order Items
           </h3>
           <div className="space-y-3">
-            {data && data.cart.map((item, index) => (
+            {groupedItems.map((item, index) => (
               <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <img
                   src={`${backend_url}/${item.images[0]}`}
@@ -147,7 +158,9 @@ const UserOrderDetails = () => {
                 />
                 <div className="flex-1">
                   <div className="font-medium text-gray-800 text-sm mb-1">
-                    {item.name}
+                    <Link to={`/product/${item._id}`} className="hover:text-pink-600 transition-colors duration-200">
+                      {item.name}
+                    </Link>
                   </div>
                   <div className="text-sm text-gray-600">
                     <span className="text-pink-600 font-medium">US {item.discountPrice} $</span>
@@ -158,7 +171,7 @@ const UserOrderDetails = () => {
                   </div>
                 </div>
                 {
-                  data?.Status === "Delivered" && (
+                  isDeliveredOrder && (
                     hasReviewed(item) ? (
                       <div className="px-4 py-2 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
                         Reviewed
@@ -182,82 +195,123 @@ const UserOrderDetails = () => {
             {/* Feedback Modal */}
             {
               open && (
-                <div className="w-full fixed top-0 left-0 h-screen bg-[#0005] z-50 flex items-center justify-center">
-                  <div className="w-[50%] h-min bg-[#fff] shadow rounded-md p-3">
-                    <div className="w-full flex justify-end p-3">
-                      <RxCross1 size={30} onClick={() => setOpen(false)} className="cursor-pointer" />
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-all duration-300">
+                  <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden animate-fadeIn">
+                    {/* Header */}
+                    <div className="flex justify-between items-center p-4 border-b border-gray-100">
+                      <h2 className="text-xl font-semibold text-gray-800 font-['Poppins']">
+                        Share Your Feedback
+                      </h2>
+                      <button
+                        onClick={() => setOpen(false)}
+                        className="p-1 hover:bg-gray-100 rounded-full transition-colors duration-200"
+                      >
+                        <RxCross1 size={20} className="text-gray-500 hover:text-gray-700" />
+                      </button>
                     </div>
-                    <h2 className="text-[30px] font-[500] font-Poppins text-center">
-                      Give a feedback
-                    </h2>
-                    <br />
-                    <div className="w-full flex">
-                      <img src={`${backend_url}/${selectedItem?.images[0]}`} alt={selectedItem?.name} className="w-[80px] h-[80px]" />
-                      <div className="">
-                        <div className="pl-3 text-[20px]">
-                          {selectedItem?.name}
+
+                    {/* Content */}
+                    <div className="p-5">
+                      {/* Product Info */}
+                      <Link to={`/product/${selectedItem?._id}`} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
+                        <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
+                          <img
+                            src={`${backend_url}/${selectedItem?.images[0]}`}
+                            alt={selectedItem?.name}
+                            className="w-20 h-20 object-cover rounded-lg shadow-sm"
+                          />
+                          <div className="flex-1">
+                            <h3 className="font-medium text-gray-800 line-clamp-2">
+                              {selectedItem?.name}
+                            </h3>
+                            <div className="mt-1">
+                              <span className="text-lg font-semibold text-gray-900">
+                                US$ {selectedItem?.discountPrice}
+                              </span>
+                              <span className="text-gray-500 ml-2">
+                                × {selectedItem?.qty}
+                              </span>
+                            </div>
+                          </div>
                         </div>
-                        <h4 className="pl-3  text-[20px]">
-                          US$ {selectedItem?.discountPrice} x {selectedItem?.qty}
-                        </h4>
+                      </Link>
+
+                      {/* Rating Section */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Rating <span className="text-red-500">*</span>
+                        </label>
+                        <div className="flex gap-1.5">
+                          {[1, 2, 3, 4, 5].map((i) => (
+                            <button
+                              key={i}
+                              onClick={() => setRating(i)}
+                              className="transition-transform hover:scale-110 focus:outline-none"
+                            >
+                              {rating >= i ? (
+                                <AiFillStar size={28} className="text-yellow-400" />
+                              ) : (
+                                <AiOutlineStar size={28} className="text-yellow-400" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                        {rating === 0 && (
+                          <p className="text-xs text-red-500 mt-1">Please select a rating</p>
+                        )}
                       </div>
-                    </div>
-                    <br />
-                    <br />
-                    {/* Ratings */}
-                    <h5 className="pl-3 text-[20px] font-[500]">Give a rating: <span className='text-red-500'>*</span>
-                    </h5>
-                    <div className="flex w-full ml-2 pt-1">
-                      {[1, 2, 3, 4, 5].map((i) => rating >= i ? (
-                        <AiFillStar
-                          key={i}
-                          className="mr-1 cursor-pointer"
-                          color="rgb(246,186,0)"
-                          size={25}
-                          onClick={() => setRating(i)}
+
+                      {/* Comment Section */}
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Your Review
+                          <span className="text-gray-400 text-xs font-normal ml-1">
+                            (optional)
+                          </span>
+                        </label>
+                        <textarea
+                          rows="4"
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          placeholder="Tell us about your experience with this product..."
+                          className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:border-blue-400 focus:ring-2 focus:ring-blue-100 outline-none transition-all duration-200 resize-none placeholder:text-gray-400"
                         />
-                      ) : (
-                        <AiOutlineStar
-                          key={i}
-                          className="mr-1 cursor-pointer"
-                          color="rgb(246,186,0)"
-                          size={25}
-                          onClick={() => setRating(i)}
-                        />
-                      ))}
-                    </div>
-                    <br />
-                    <div className="w-full ml-3">
-                      <label className='block tex-[20px] font-[500]'>
-                        Write a comment :
-                        <span className="ml-1 font-[400] text-[16px] text-[#00000030]">
-                          (optional)
-                        </span>
-                      </label>
-                      <textarea
-                        name='comment'
-                        id="" cols="20"
-                        rows="5"
-                        placeholder="How was your experience with the product?"
-                        value={comment}
-                        onChange={(e) => setComment(e.target.value)}
-                        className="mt-2 w-[95%] border p-2 outline-none  ">
-                      </textarea>
-                    </div>
-                    <div className={`${styles.button} text-white text-[15px] ml-3`}
-                      onClick={rating >= 1 ? reviewHandler : null}
-                    >
-                      Submit Feedback
+                        <div className="text-right mt-1">
+                          <span className="text-xs text-gray-400">
+                            {comment.length}/500 characters
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setOpen(false)}
+                          className="flex-1 px-4 py-2.5 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 font-medium transition-all duration-200"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={rating >= 1 ? reviewHandler : null}
+                          className={`flex-1 px-4 py-2.5 rounded-xl font-medium transition-all duration-200 ${rating >= 1
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-md hover:shadow-lg'
+                            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            }`}
+                        >
+                          Submit Feedback
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
               )
             }
+
           </div>
           <div className="border-t border-gray-200 mt-3 pt-3 text-right">
             <div className="text-base">
               <span className="text-gray-600">Total Price: </span>
-              <strong className="text-xl text-pink-600">US {data?.totalPrice} $</strong>
+              <strong className="text-xl text-pink-600">US {groupedTotalPrice} $</strong>
             </div>
           </div>
         </div>

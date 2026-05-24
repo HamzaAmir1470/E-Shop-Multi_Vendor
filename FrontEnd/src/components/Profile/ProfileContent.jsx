@@ -212,6 +212,28 @@ const ProfileContent = ({ active }) => {
     );
 };
 
+const getOrderGroupKey = (order) => order?.paymentInfo?.id || order?._id;
+
+const groupOrdersByCheckout = (orders = []) => {
+    const groupedOrders = new Map();
+
+    orders.forEach((order) => {
+        const groupKey = getOrderGroupKey(order);
+
+        if (!groupedOrders.has(groupKey)) {
+            groupedOrders.set(groupKey, {
+                representative: order,
+                orders: [order],
+            });
+            return;
+        }
+
+        groupedOrders.get(groupKey).orders.push(order);
+    });
+
+    return Array.from(groupedOrders.values());
+};
+
 const AllOrders = () => {
     const { user } = useSelector((state) => state.user);
     const { orders } = useSelector((state) => state.order);
@@ -264,12 +286,14 @@ const AllOrders = () => {
         },
     ]; 
     
-    const rows = orders?.map((item) => ({
-        id: item._id,
-        itemsQty: item.cart.length,
-        total: `US$ ${item.totalPrice}`,
-        status: item.orderStatus || item.Status,
-    })) || [];
+    const groupedOrders = groupOrdersByCheckout(orders || []);
+
+    const rows = groupedOrders.map(({ representative, orders: orderGroup }) => ({
+        id: representative._id,
+        itemsQty: orderGroup.reduce((total, order) => total + (order.cart?.length || 0), 0),
+        total: `US$ ${representative.totalPrice}`,
+        status: representative.orderStatus || representative.Status,
+    }));
 
     return (
         <div className="w-full px-2 md:px-8 pt-4">

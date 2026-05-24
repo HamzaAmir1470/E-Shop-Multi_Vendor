@@ -6,7 +6,28 @@ import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import Loader from "../Layout/Loader";
 import { getAllOrdersShop } from "../../redux/actions/order.js";
-import { toast } from "react-toastify";
+
+const getOrderGroupKey = (order) => order?.paymentInfo?.id || order?._id;
+
+const groupOrdersByCheckout = (orders = []) => {
+    const groupedOrders = new Map();
+
+    orders.forEach((order) => {
+        const groupKey = getOrderGroupKey(order);
+
+        if (!groupedOrders.has(groupKey)) {
+            groupedOrders.set(groupKey, {
+                representative: order,
+                orders: [order],
+            });
+            return;
+        }
+
+        groupedOrders.get(groupKey).orders.push(order);
+    });
+
+    return Array.from(groupedOrders.values());
+};
 
 const AllOrders = () => {
     const { orders, isLoading } = useSelector((state) => state.order);
@@ -61,13 +82,14 @@ const AllOrders = () => {
             ),
         },
     ];
-    console.log(orders)
-    const rows = orders?.map((item) => ({
-        id: item._id,
-        itemsQty: item.cart.length,
-        total: `US$ ${item.totalPrice}`,
-        status: item.orderStatus || item.Status,
-    })) || [];
+    const groupedOrders = groupOrdersByCheckout(orders || []);
+
+    const rows = groupedOrders.map(({ representative, orders: orderGroup }) => ({
+        id: representative._id,
+        itemsQty: orderGroup.reduce((total, order) => total + (order.cart?.length || 0), 0),
+        total: `US$ ${representative.totalPrice}`,
+        status: representative.orderStatus || representative.Status,
+    }));
 
 
     return (
