@@ -36,7 +36,6 @@ const ProductDetailsPage = () => {
             <Header />
 
             <ProductDetails data={data} />
-
             {
                 !eventData && data && (
                     <SuggestedProduct data={data} />

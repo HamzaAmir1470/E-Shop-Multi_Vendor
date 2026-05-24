@@ -21,7 +21,6 @@ import { RxCross1 } from "react-icons/rx";
 import axios from "axios";
 import { server } from "../../server";
 import { toast } from "react-toastify";
-import logo from "../../assets/logo.png";
 
 const Header = ({ activeHeading }) => {
   const { wishlist } = useSelector((state) => state.wishlist);
@@ -120,7 +119,7 @@ const Header = ({ activeHeading }) => {
   return (
     <>
       {/* DESKTOP TOP HEADER */}
-      <div className="hidden md:block w-full bg-white fixed top-0 left-0 z-50 shadow-sm">
+      <div className="hidden md:block w-full bg-white/95 backdrop-blur-md sticky top-0 left-0 z-50 shadow-sm border-b border-gray-100">
         <div className="w-full flex items-center justify-between px-5 py-2">
           {/* LOGO */}
           <Link to="/">
@@ -244,12 +243,8 @@ const Header = ({ activeHeading }) => {
 
       {/* DESKTOP BLUE BAR - FIXED */}
       <div
-        className={`hidden md:flex items-center w-full bg-gradient-to-r from-[#3321c8] to-[#4a3ad6] h-[70px] shadow-lg z-40 transition-all duration-300 ${active ? "fixed top-[73px] left-0" : "relative mt-[90px]"
+        className={`hidden md:flex items-center w-full bg-gradient-to-r from-[#3321c8] to-[#4a3ad6] h-[70px] sticky top-[73px] left-0 z-40 transition-all duration-300 backdrop-blur-md ${active ? "shadow-xl shadow-[#3321c8]/20" : "shadow-lg"
           }`}
-        style={{
-          transform: 'translateZ(0)', // Force hardware acceleration
-          willChange: 'transform' // Optimize for animations
-        }}
       >
         <div className={`${styles.section} flex items-center justify-between h-full w-full px-4`}>
           {/* CATEGORY DROPDOWN */}
@@ -348,15 +343,12 @@ const Header = ({ activeHeading }) => {
         </div>
       </div>
 
-      {/* Add this spacer div to prevent content jump when blue bar becomes fixed */}
-      {active && <div className="hidden md:block h-[70px]"></div>}
-
       {/* CART AND WISHLIST MODALS */}
       {openCart && <Cart setOpenCart={setOpenCart} />}
       {openWishlist && <Wishlist setOpenWishlist={setOpenWishlist} />}
 
       {/* MOBILE HEADER */}
-      <div className="md:hidden w-full fixed bg-white z-50 top-0 left-0 shadow-sm py-3 ">
+      <div className="md:hidden w-full sticky top-0 bg-white/95 backdrop-blur-md z-50 shadow-sm border-b border-gray-100 py-3">
         <div className="w-full flex items-center justify-between px-3">
           <BiMenuAltLeft
             size={40}
