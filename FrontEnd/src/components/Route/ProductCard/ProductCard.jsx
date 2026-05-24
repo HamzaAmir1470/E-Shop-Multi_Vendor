@@ -55,6 +55,17 @@ const ProductCard = ({ data, isEvent }) => {
 
     const baseURL = server.replace('/api/v2', '');
 
+    // compute numeric rating from reviews or rating fields
+    const ratingValue = (() => {
+        if (data?.reviews && data.reviews.length > 0) {
+            const sum = data.reviews.reduce((acc, r) => acc + (r.rating || r.ratings || 0), 0);
+            return sum / data.reviews.length;
+        }
+        if (typeof data?.rating === 'number') return data.rating;
+        if (typeof data?.ratings === 'number') return data.ratings;
+        return 0;
+    })();
+
     const addToWishlistHandler = (e, data) => {
         e.stopPropagation();
         setClick(true);
@@ -104,13 +115,24 @@ const ProductCard = ({ data, isEvent }) => {
                 </h4>
             </Link>
 
-            {/* Static Rating */}
-            <div className="flex">
-                <AiFillStar className="mr-2" color="#F6BA00" size={20} />
-                <AiFillStar className="mr-2" color="#F6BA00" size={20} />
-                <AiFillStar className="mr-2" color="#F6BA00" size={20} />
-                <AiFillStar className="mr-2" color="#F6BA00" size={20} />
-                <AiOutlineStar className="mr-2" color="#F6BA00" size={20} />
+            {/* Dynamic Rating */}
+            <div className="flex items-center gap-2">
+                <div className="relative inline-block" aria-hidden>
+                    <div className="flex text-gray-200">
+                        {[...Array(5)].map((_, i) => (
+                            <AiOutlineStar key={i} className="mr-1" color="#e5e7eb" size={18} />
+                        ))}
+                    </div>
+                    <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${Math.max(0, Math.min(5, ratingValue)) / 5 * 100}%` }}>
+                        <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                                <AiFillStar key={i} className="mr-1" color="#F6BA00" size={18} />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <span className="text-sm text-gray-600">{ratingValue > 0 ? `${ratingValue.toFixed(1)} (${data.reviews?.length || 0})` : 'No rating'}</span>
             </div>
 
             {/* Price Section */}
