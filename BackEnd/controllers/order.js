@@ -145,4 +145,84 @@ router.put(
   })
 );
 
+// review for a product
+router.put(
+  "/create-new-review",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { user, rating, comment, productId, orderId } = req.body;
+
+      const order = await Order.findById(orderId);
+      if (!order) {
+        return next(new ErrorHandler("Order not found", 404));
+      }
+
+      const alreadyReviewed = order.cart.some((item) => {
+        const itemProductId = (item.product || item._id)?.toString();
+        return itemProductId === productId?.toString() && item.isReviewed;
+      });
+
+      if (alreadyReviewed) {
+        return next(new ErrorHandler("You have already reviewed this product for this order", 400));
+      }
+
+      const product = await Product.findById(productId);
+
+      if (!product) {
+        return next(new ErrorHandler("Product not found", 404));
+      }
+      const isReviewed = product.reviews.some(
+        (rev) => rev.user?._id?.toString() === req.user._id.toString()
+      );
+      const review = {
+        user,
+        rating,
+        comment,
+        productId
+      };
+      if (isReviewed) {
+        product.reviews.forEach((rev) => {
+          if (rev.user._id === req.user._id) {
+            rev.rating = rating;
+            rev.comment = comment;
+            rev.user = user;
+          }
+        });
+      } else {
+        product.reviews.push(review);
+      }
+      let avg = 0;
+      product.reviews.forEach((rev) => {
+        avg += rev.rating;
+      });
+      product.ratings = avg / product.reviews.length;
+
+      await product.save({ validateBeforeSave: false });
+
+      order.cart = order.cart.map((item) => {
+        const itemProductId = (item.product || item._id)?.toString();
+
+        if (itemProductId === productId?.toString()) {
+          return {
+            ...item,
+            isReviewed: true,
+          };
+        }
+
+        return item;
+      });
+
+      await order.save({ validateBeforeSave: false });
+
+      res.status(200).json({
+        success: true,
+        message: "Reviewed Successfully!",
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 module.exports = router;

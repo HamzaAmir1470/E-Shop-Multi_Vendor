@@ -6,15 +6,21 @@ import styles from "../../src/styles/styles.js";
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { backend_url } from '../server.js';
+import axios from 'axios';
+import { server } from '../server.js';
 import { toast } from "react-toastify";
 import { getAllOrdersUser } from '../redux/actions/order.js';
-
+import { RxCross1 } from "react-icons/rx";
+import { AiFillStar, AiOutlineStar } from "react-icons/ai";
 
 const UserOrderDetails = () => {
   const { orders } = useSelector((state) => state.order);
   const { user } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-
+  const [open, setOpen] = React.useState(false);
+  const [selectedItem, setSelectedItem] = React.useState(null);
+  const [rating, setRating] = React.useState(1);
+  const [comment, setComment] = React.useState("");
   const [status, setStatus] = React.useState("");
   const { id } = useParams();
 
@@ -24,10 +30,29 @@ const UserOrderDetails = () => {
 
   const data = orders?.find((item) => item._id === id);
 
-  const orderUpdateHandler = (e) => {
-    console.log("Order status updated to:", status);
-    toast.success("Order status updated successfully!");
+  const reviewHandler = async (e) => {
+    await axios.put(`${server}/order/create-new-review`, {
+      user,
+      rating,
+      comment,
+      productId: selectedItem._id,
+      orderId: id
+    }, { withCredentials: true })
+      .then((res) => {
+        toast.success(res.data.message);
+        dispatch(getAllOrdersUser(user._id));
+        setComment("");
+        setRating(null);
+        setOpen(false);
+      })
+      .catch((error) => {
+        toast.error(error.response.data.message || "Failed to submit feedback.");
+      }
+      );
   }
+
+  const hasReviewed = (item) => Boolean(item?.isReviewed);
+
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -134,13 +159,100 @@ const UserOrderDetails = () => {
                 </div>
                 {
                   data?.Status === "Delivered" && (
-                    <div className={`${styles.button} text-white`}>
-                      Feedback
-                    </div>
+                    hasReviewed(item) ? (
+                      <div className="px-4 py-2 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                        Reviewed
+                      </div>
+                    ) : (
+                      <div
+                        className={`${styles.button} text-white`}
+                        onClick={() => {
+                          setSelectedItem(item);
+                          setOpen(true);
+                        }}
+                      >
+                        Feedback
+                      </div>
+                    )
                   )
                 }
               </div>
             ))}
+
+            {/* Feedback Modal */}
+            {
+              open && (
+                <div className="w-full fixed top-0 left-0 h-screen bg-[#0005] z-50 flex items-center justify-center">
+                  <div className="w-[50%] h-min bg-[#fff] shadow rounded-md p-3">
+                    <div className="w-full flex justify-end p-3">
+                      <RxCross1 size={30} onClick={() => setOpen(false)} className="cursor-pointer" />
+                    </div>
+                    <h2 className="text-[30px] font-[500] font-Poppins text-center">
+                      Give a feedback
+                    </h2>
+                    <br />
+                    <div className="w-full flex">
+                      <img src={`${backend_url}/${selectedItem?.images[0]}`} alt={selectedItem?.name} className="w-[80px] h-[80px]" />
+                      <div className="">
+                        <div className="pl-3 text-[20px]">
+                          {selectedItem?.name}
+                        </div>
+                        <h4 className="pl-3  text-[20px]">
+                          US$ {selectedItem?.discountPrice} x {selectedItem?.qty}
+                        </h4>
+                      </div>
+                    </div>
+                    <br />
+                    <br />
+                    {/* Ratings */}
+                    <h5 className="pl-3 text-[20px] font-[500]">Give a rating: <span className='text-red-500'>*</span>
+                    </h5>
+                    <div className="flex w-full ml-2 pt-1">
+                      {[1, 2, 3, 4, 5].map((i) => rating >= i ? (
+                        <AiFillStar
+                          key={i}
+                          className="mr-1 cursor-pointer"
+                          color="rgb(246,186,0)"
+                          size={25}
+                          onClick={() => setRating(i)}
+                        />
+                      ) : (
+                        <AiOutlineStar
+                          key={i}
+                          className="mr-1 cursor-pointer"
+                          color="rgb(246,186,0)"
+                          size={25}
+                          onClick={() => setRating(i)}
+                        />
+                      ))}
+                    </div>
+                    <br />
+                    <div className="w-full ml-3">
+                      <label className='block tex-[20px] font-[500]'>
+                        Write a comment :
+                        <span className="ml-1 font-[400] text-[16px] text-[#00000030]">
+                          (optional)
+                        </span>
+                      </label>
+                      <textarea
+                        name='comment'
+                        id="" cols="20"
+                        rows="5"
+                        placeholder="How was your experience with the product?"
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        className="mt-2 w-[95%] border p-2 outline-none  ">
+                      </textarea>
+                    </div>
+                    <div className={`${styles.button} text-white text-[15px] ml-3`}
+                      onClick={rating >= 1 ? reviewHandler : null}
+                    >
+                      Submit Feedback
+                    </div>
+                  </div>
+                </div>
+              )
+            }
           </div>
           <div className="border-t border-gray-200 mt-3 pt-3 text-right">
             <div className="text-base">

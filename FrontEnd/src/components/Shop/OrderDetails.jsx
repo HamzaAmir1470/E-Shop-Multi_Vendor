@@ -20,9 +20,11 @@ const OrderDetails = () => {
 
     useEffect(() => {
         dispatch(getAllOrdersShop(seller._id));
-    }, [dispatch]);
+    }, [dispatch, seller?._id]);
 
     const data = orders?.find((item) => item._id === id);
+
+    const hasReviewed = (item) => Boolean(item?.isReviewed);
 
     const orderUpdateHandler = async (e) => {
         await axios.put(`${server}/order/update-order-status/${id}`,
@@ -152,6 +154,11 @@ const OrderDetails = () => {
                                         <span className="font-semibold">US${(item.discountPrice * item.qty).toFixed(2)}</span>
                                     </div>
                                 </div>
+                                {hasReviewed(item) && (
+                                    <div className="px-4 py-2 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
+                                        Reviewed
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
