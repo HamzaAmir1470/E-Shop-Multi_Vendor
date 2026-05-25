@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { BsFillBagFill } from "react-icons/bs";
 import { FaTruck, FaPaypal, FaCreditCard } from "react-icons/fa";
 import { MdMoneyOffCsred } from "react-icons/md";
-import styles from "../../styles/styles.js";
+import { HiOutlineReceiptRefund } from "react-icons/hi";
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllOrdersShop } from '../../redux/actions/order.js';
@@ -11,7 +11,7 @@ import { toast } from "react-toastify";
 import axios from 'axios';
 
 const OrderDetails = () => {
-    const { orders, isLoading } = useSelector((state) => state.order);
+    const { orders } = useSelector((state) => state.order);
     const { seller } = useSelector((state) => state.seller);
     const dispatch = useDispatch();
     const navigate = useNavigate();
@@ -36,7 +36,7 @@ const OrderDetails = () => {
 
     const hasReviewed = (item) => Boolean(item?.isReviewed);
 
-    const orderUpdateHandler = async (e) => {
+    const orderUpdateHandler = async () => {
         await axios.put(`${server}/order/update-order-status/${id}`,
             { status }, { withCredentials: true })
             .then((res) => {
@@ -46,10 +46,10 @@ const OrderDetails = () => {
                     dispatch(getAllOrdersShop(seller._id));
                     navigate("/dashboard-orders");
                 } else {
-                    toast.error(error.res.data.message);
+                    toast.error(res?.data?.message || "Failed to update order status.");
                 }
             }).catch((error) => {
-                toast.error("Failed to update order status.");
+                toast.error(error.response?.data?.message || "Failed to update order status.");
             });
     }
 
@@ -93,6 +93,8 @@ const OrderDetails = () => {
                 return type?.toUpperCase() || 'Card';
         }
     }
+
+    const isDeliveredOrder = data?.Status === 'Delivered';
 
     return (
         <div className="py-6 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50">
@@ -303,6 +305,25 @@ const OrderDetails = () => {
                         </button>
                     </div>
                 </div>
+
+                {isDeliveredOrder && (
+                    <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+                        <h4 className='text-base font-semibold text-gray-800 mb-3'>
+                            Refund Action
+                        </h4>
+                        <p className="text-sm text-gray-600 mb-4">
+                            This order has been delivered, so refund handling is available from here.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={() => navigate('/dashboard-refunds')}
+                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer"
+                        >
+                            <HiOutlineReceiptRefund size={18} />
+                            Refund Order
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     )

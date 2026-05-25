@@ -6,6 +6,29 @@ import { getAlleventsShop } from "../../redux/actions/event";
 import ProductCard from "../Route/ProductCard/ProductCard";
 import Ratings from "../Products/Ratings";
 import styles from "../../styles/styles";
+import { backend_url } from "../../server";
+
+const getUserAvatarUrl = (user) => {
+  const avatarValue = user?.avatar;
+
+  if (!avatarValue) {
+    return `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(user?.name || "User")}`;
+  }
+
+  if (typeof avatarValue === "string") {
+    return avatarValue.startsWith("http")
+      ? avatarValue
+      : `${backend_url}${avatarValue.startsWith("/") ? "" : "/"}${avatarValue}`;
+  }
+
+  if (typeof avatarValue === "object" && avatarValue.url) {
+    return avatarValue.url.startsWith("http")
+      ? avatarValue.url
+      : `${backend_url}${avatarValue.url.startsWith("/") ? "" : "/"}${avatarValue.url}`;
+  }
+
+  return `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(user?.name || "User")}`;
+};
 
 const ShopProfileData = ({ isOwner }) => {
   const { products } = useSelector((state) => state.product);
@@ -20,7 +43,14 @@ const ShopProfileData = ({ isOwner }) => {
     dispatch(getAlleventsShop(id));
   }, [dispatch, id]);
 
-  const allReviews = products?.map((product) => product.reviews).flat();
+  const allReviews = products?.flatMap((product) =>
+    (product.reviews || []).map((review) => ({
+      ...review,
+      productId: product._id,
+      productName: product.name,
+      productImage: product.images?.[0],
+    }))
+  ) || [];
 
   const tabStyle = (tab) =>
     `font-semibold text-lg cursor-pointer px-4 py-2 rounded-md transition-colors ${active === tab ? "bg-red-100 text-red-600" : "text-gray-700 hover:text-red-500"
@@ -93,17 +123,25 @@ const ShopProfileData = ({ isOwner }) => {
                 className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg shadow-sm hover:shadow-md transition-shadow"
               >
                 <img
-                  src={item.user.avatar?.url}
-                  alt={item.user.name}
+                  src={getUserAvatarUrl(item.user || item)}
+                  alt={item.user?.name || item.name || "User"}
                   className="w-12 h-12 rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(item.user?.name || item.name || "User")}`;
+                  }}
                 />
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h1 className="font-semibold text-gray-800">{item.user.name}</h1>
-                    <Ratings rating={item.rating} />
+                    <div>
+                      <h1 className="font-semibold text-gray-800">{item.user?.name || item.name || "Anonymous"}</h1>
+                      <p className="text-xs text-gray-500">{item.productName || "Product review"}</p>
+                    </div>
+                    <Ratings rating={item.rating || item.ratings || 0} />
                   </div>
-                  <p className="text-gray-600">{item?.comment}</p>
-                  <p className="text-gray-400 text-sm mt-1">2 days ago</p>
+                  <p className="text-gray-600">{item?.comment || item?.review || "No comment provided."}</p>
+                  <p className="text-gray-400 text-sm mt-1">
+                    {item.createdAt ? new Date(item.createdAt).toLocaleDateString() : "Recent review"}
+                  </p>
                 </div>
               </div>
             ))

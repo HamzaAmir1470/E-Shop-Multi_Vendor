@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from 'react'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
-import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage, ForgotPasswordPage, SellerForgotPasswordPage, ResetPasswordPage, SellerResetPasswordPage,OrderDetailsPage } from './Routes/Routes.js'
+import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage, ForgotPasswordPage, SellerForgotPasswordPage, ResetPasswordPage, SellerResetPasswordPage, OrderDetailsPage } from './Routes/Routes.js'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
 import Store from './redux/store.js';
 import { loadSeller, loadUser } from './redux/actions/user.js';
 import ProtectedRoute from './Routes/ProtectedRoute.js';
-import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails } from './Routes/ShopRoutes.js';
+import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails, ShopRefundsPage } from './Routes/ShopRoutes.js';
 import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
 import { getAllProducts } from './redux/actions/product.js';
 import { getAllEvents } from './redux/actions/event.js';
@@ -162,6 +162,14 @@ const App = () => {
             element={
               <SellerProtectedRoute>
                 <ShopAllOrders />
+              </SellerProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard-refunds"
+            element={
+              <SellerProtectedRoute>
+                <ShopRefundsPage />
               </SellerProtectedRoute>
             }
           />

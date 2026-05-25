@@ -1,17 +1,33 @@
 import React, { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useSelector } from 'react-redux';
 import { backend_url, server } from '../../server';
-import styles from '../../styles/styles';
 import { FiMapPin, FiPhone, FiPackage, FiStar, FiCalendar, FiEdit2, FiLogOut } from 'react-icons/fi';
 import { MdStorefront } from 'react-icons/md';
 import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 
+const getShopAvatarUrl = (avatar) => {
+  if (!avatar) return 'https://via.placeholder.com/140';
+
+  if (typeof avatar === 'string') {
+    return avatar.startsWith('http')
+      ? avatar
+      : `${backend_url}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
+  }
+
+  if (typeof avatar === 'object' && avatar.url) {
+    return avatar.url.startsWith('http')
+      ? avatar.url
+      : `${backend_url}${avatar.url.startsWith('/') ? '' : '/'}${avatar.url}`;
+  }
+
+  return 'https://via.placeholder.com/140';
+};
+
 
 const ShopInfo = ({ isOwner }) => {
   const { products } = useSelector((state) => state.product);
   const { seller } = useSelector((state) => state.seller);
-  const [isLoading, setIsLoading] = React.useState(false);
   const navigate = useNavigate();
   const [data, setData] = React.useState(null);
 
@@ -21,16 +37,12 @@ const ShopInfo = ({ isOwner }) => {
   useEffect(() => {
     if (!id) return;   // 🚨 guard
 
-    setIsLoading(true);
-
     axios.get(`${server}/shop/get-shop-info/${id}`)
       .then((res) => {
         setData(res.data.shop);
-        setIsLoading(false);
       })
       .catch((err) => {
         console.error("Error fetching shop info:", err);
-        setIsLoading(false);
       });
 
   }, [id]);
@@ -56,9 +68,12 @@ const ShopInfo = ({ isOwner }) => {
           <div className="relative">
             <div className="absolute -inset-2 bg-gradient-to-r from-blue-400 to-indigo-500 rounded-full blur opacity-30"></div>
             <img
-              src={`${backend_url}${data?.avatar}`}
+              src={getShopAvatarUrl(data?.avatar)}
               alt={seller?.name || "Shop Avatar"}
               className='relative w-[140px] h-[140px] object-cover rounded-full border-4 border-white shadow-2xl'
+              onError={(e) => {
+                e.currentTarget.src = 'https://via.placeholder.com/140';
+              }}
             />
           </div>
           <h3 className='text-center mt-4 text-2xl font-bold text-white'>
