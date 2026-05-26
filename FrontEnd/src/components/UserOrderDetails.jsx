@@ -29,17 +29,22 @@ const UserOrderDetails = () => {
   }, [dispatch, user?._id]);
 
   const data = orders?.find((item) => item._id === id);
-  const checkoutGroupKey = data?.paymentInfo?.id || data?._id;
-  const groupedOrders = orders?.filter((item) => (item?.paymentInfo?.id || item?._id) === checkoutGroupKey) || [];
-  const groupedItems = groupedOrders.flatMap((order) =>
-    (order.cart || []).map((item) => ({
-      ...item,
-      __orderId: order._id,
-      __orderStatus: order.Status,
-    }))
-  );
-  const isDeliveredOrder = groupedOrders.some((order) => order.Status === "Delivered");
-  const groupedTotalPrice = groupedOrders[0]?.totalPrice ?? data?.totalPrice;
+  const orderItems = data?.cart || [];
+  const isDeliveredOrder = data?.Status === "Delivered";
+  const getItemSubtotal = (item) => {
+    const quantity = Number(item?.qty || 1);
+    const unitPrice = Number(item?.discountPrice || item?.price || 0);
+    const itemDiscount = Number(item?.itemDiscount || 0);
+
+    return Math.max(quantity * unitPrice - itemDiscount, 0);
+  };
+
+  const getItemDelivery = (item) => getItemSubtotal(item) * 0.1;
+  const getItemTotal = (item) => getItemSubtotal(item) + getItemDelivery(item);
+
+  const orderItemSubtotal = orderItems.reduce((total, item) => total + getItemSubtotal(item), 0);
+  const orderDelivery = orderItems.reduce((total, item) => total + getItemDelivery(item), 0);
+  const groupedTotalPrice = orderItemSubtotal + orderDelivery;
 
   const reviewHandler = async () => {
     await axios.put(`${server}/order/create-new-review`, {
@@ -47,7 +52,7 @@ const UserOrderDetails = () => {
       rating,
       comment,
       productId: selectedItem._id,
-      orderId: selectedItem.__orderId || id
+      orderId: data?._id || id
     }, { withCredentials: true })
       .then((res) => {
         toast.success(res.data.message);
@@ -106,22 +111,31 @@ const UserOrderDetails = () => {
     }
   }
 
-  const refundHandler = async () => {
+  const hasRefundRequested = (item) =>
+    Boolean(item?.isRefundRequested || item?.refundStatus === "Processing Refund" || item?.refundStatus === "Refund Requested");
+
+  const refundItemHandler = async (item) => {
     try {
-      const refundOrderId = data?._id || id;
-      console.log(refundOrderId)
-      if (!refundOrderId) {
-        toast.error("Unable to identify the order for refund.");
+      const refundOrderId = item?.__orderId || data?._id || id;
+      const refundProductId = item?.product || item?._id;
+
+      if (!refundOrderId || !refundProductId) {
+        toast.error("Unable to identify the item for refund.");
         return;
       }
 
       const response = await axios.put(
         `${server}/order/request-refund`,
-        { orderId: refundOrderId, status: "Processing Refund" },
+        {
+          orderId: refundOrderId,
+          productId: refundProductId,
+          status: "Processing Refund",
+        },
         { withCredentials: true }
       );
 
       toast.success(response?.data?.message || "Refund request submitted successfully.");
+      dispatch(getAllOrdersUser(user._id));
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to request refund.");
     }
@@ -170,7 +184,7 @@ const UserOrderDetails = () => {
             Order Items
           </h3>
           <div className="space-y-3">
-            {groupedItems.map((item, index) => (
+            {orderItems.map((item, index) => (
               <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <img
                   src={`${backend_url}/${item.images[0]}`}
@@ -183,17 +197,22 @@ const UserOrderDetails = () => {
                       {item.name}
                     </Link>
                   </div>
-                  <div className="text-sm text-gray-600">
-                    <span className="text-pink-600 font-medium">US {item.discountPrice} $</span>
-                    <span className="mx-2">×</span>
-                    <span>{item.qty}</span>
-                    <span className="mx-2">=</span>
-                    <span className="font-semibold">US {(item.discountPrice * item.qty).toFixed(2)} $</span>
+                  <div className="text-sm text-gray-600 space-y-1">
+                    <p>
+                      <span className="text-pink-600 font-medium">US$ {Number(item.discountPrice || item.price || 0).toFixed(2)}</span>
+                      <span className="mx-2">×</span>
+                      <span>{item.qty}</span>
+                      <span className="mx-2">=</span>
+                      <span className="font-semibold">US$ {getItemSubtotal(item).toFixed(2)}</span>
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Delivery: US$ {getItemDelivery(item).toFixed(2)} | Item total: US$ {getItemTotal(item).toFixed(2)}
+                    </p>
                   </div>
                 </div>
-                {
-                  isDeliveredOrder && (
-                    hasReviewed(item) ? (
+                {isDeliveredOrder && (
+                  <div className="flex flex-col items-end gap-2">
+                    {hasReviewed(item) ? (
                       <div className="px-4 py-2 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
                         Reviewed
                       </div>
@@ -207,9 +226,29 @@ const UserOrderDetails = () => {
                       >
                         Feedback
                       </div>
-                    )
-                  )
-                }
+                    )}
+
+                    {hasRefundRequested(item) ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium cursor-not-allowed"
+                        disabled
+                      >
+                        <HiOutlineReceiptRefund size={14} />
+                        Refund Requested
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => refundItemHandler(item)}
+                        className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium shadow-sm hover:shadow-md transition-all duration-300"
+                      >
+                        <HiOutlineReceiptRefund size={14} />
+                        Request Refund
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
 
@@ -331,8 +370,16 @@ const UserOrderDetails = () => {
           </div>
           <div className="border-t border-gray-200 mt-3 pt-3 text-right">
             <div className="text-base">
+              <span className="text-gray-600">Item subtotal: </span>
+              <strong className="text-xl text-pink-600">US$ {orderItemSubtotal.toFixed(2)}</strong>
+            </div>
+            <div className="text-base mt-1">
+              <span className="text-gray-600">Delivery: </span>
+              <strong className="text-xl text-pink-600">US$ {orderDelivery.toFixed(2)}</strong>
+            </div>
+            <div className="text-base mt-1">
               <span className="text-gray-600">Total Price: </span>
-              <strong className="text-xl text-pink-600">US {groupedTotalPrice} $</strong>
+              <strong className="text-xl text-pink-600">US$ {groupedTotalPrice.toFixed(2)}</strong>
             </div>
           </div>
         </div>
@@ -412,7 +459,7 @@ const UserOrderDetails = () => {
         </div>
         <Link to="/">
           <div className={`${styles.button} text-white`}>
-            Send Message!
+            Send Message
           </div>
         </Link>
         {isDeliveredOrder && (
@@ -421,16 +468,8 @@ const UserOrderDetails = () => {
               Refund Action
             </h4>
             <p className="text-sm text-gray-600 mb-4">
-              This order has been delivered, so refund handling is available from here.
+              This order has been delivered. Use the refund button on each item to request an item-level refund.
             </p>
-            <button
-              type="button"
-              onClick={refundHandler}
-              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer"
-            >
-              <HiOutlineReceiptRefund size={18} />
-              Refund Order
-            </button>
           </div>
         )}
       </div>

@@ -284,15 +284,22 @@ const AllOrders = () => {
                 </Link>
             ),
         },
-    ]; 
-    
-    const groupedOrders = groupOrdersByCheckout(orders || []);
+    ];
 
-    const rows = groupedOrders.map(({ representative, orders: orderGroup }) => ({
-        id: representative._id,
-        itemsQty: orderGroup.reduce((total, order) => total + (order.cart?.length || 0), 0),
-        total: `US$ ${representative.totalPrice}`,
-        status: representative.orderStatus || representative.Status,
+    const getOrderSubtotal = (order) =>
+        (order.cart || []).reduce((total, item) => {
+            const quantity = Number(item.qty || 1);
+            const unitPrice = Number(item.discountPrice || item.price || 0);
+            const itemDiscount = Number(item.itemDiscount || 0);
+
+            return total + Math.max(quantity * unitPrice - itemDiscount, 0);
+        }, 0);
+
+    const rows = (orders || []).map((order) => ({
+        id: order._id,
+        itemsQty: order.cart?.length || 0,
+        total: `US$ ${(getOrderSubtotal(order) * 1.1).toFixed(2)}`,
+        status: order.orderStatus || order.Status,
     }));
 
     return (
@@ -314,21 +321,25 @@ const AllOrders = () => {
 };
 
 const AllRefundOrders = () => {
-    const orders = [
-        {
-            _id: "00s9f0sdg0s8fg908ds09g8s09df8g09d8",
-            orderItems: [
-                {
-                    name: "Iphone 14 pro Max",
-                },
-            ],
-            totalPrice: 120,
-            orderStatus: "Processing",
-        },
-    ];
+    const { user } = useSelector((state) => state.user);
+    const { orders } = useSelector((state) => state.order);
+    const dispatch = useDispatch();
+    useEffect(() => {
+        if (user?._id) {
+            dispatch(getAllOrdersUser(user._id));
+        }
+    }, [dispatch, user]);
 
     const columns = [
-        { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
+        { field: "orderId", headerName: "Order ID", minWidth: 150, flex: 0.7 },
+        { field: "product", headerName: "Product", minWidth: 180, flex: 1 },
+        {
+            field: "delivery",
+            headerName: "Delivery",
+            type: "number",
+            minWidth: 120,
+            flex: 0.7,
+        },
         {
             field: "status",
             headerName: "Status",
@@ -340,16 +351,16 @@ const AllRefundOrders = () => {
         },
         {
             field: "itemsQty",
-            headerName: "Items Qty",
+            headerName: "Qty",
             type: "number",
-            minWidth: 130,
+            minWidth: 100,
             flex: 0.7,
         },
         {
-            field: "total",
-            headerName: "Total",
+            field: "refundAmount",
+            headerName: "Refund Amount",
             type: "number",
-            minWidth: 130,
+            minWidth: 150,
             flex: 0.8,
         },
         {
@@ -359,7 +370,7 @@ const AllRefundOrders = () => {
             flex: 1,
             sortable: false,
             renderCell: (params) => (
-                <Link to={`/user/order/${params.row.id}`}>
+                <Link to={`/user/order/${params.row.orderId}`}>
                     <Button variant="outlined" size="small">
                         <AiOutlineArrowRight size={20} className="mr-1" />
                         View
@@ -369,12 +380,26 @@ const AllRefundOrders = () => {
         },
     ];
 
-    const rows = orders.map((item) => ({
-        id: item._id,
-        itemsQty: item.orderItems.length,
-        total: `US$ ${item.totalPrice}`,
-        status: item.orderStatus,
-    }));
+    const rows = (orders || []).flatMap((order) =>
+        (order.cart || [])
+            .filter((item) => item?.isRefundRequested || item?.refundStatus === "Processing Refund" || item?.refundStatus === "Refund Requested")
+            .map((item) => {
+                const quantity = item.qty || 1;
+                const productId = item.product || item._id;
+                const itemSubtotal = Math.max((Number(item.discountPrice || item.price || 0) * quantity) - Number(item.itemDiscount || 0), 0);
+                const delivery = itemSubtotal * 0.1;
+
+                return {
+                    id: `${order._id}-${productId}`,
+                    orderId: order._id,
+                    product: item.name,
+                    itemsQty: quantity,
+                    delivery: `US$ ${delivery.toFixed(2)}`,
+                    refundAmount: `US$ ${(itemSubtotal + delivery).toFixed(2)}`,
+                    status: item.refundStatus || "Refund Requested",
+                };
+            })
+    );
 
     return (
         <div className="w-full px-5 md:px-8 pt-4">

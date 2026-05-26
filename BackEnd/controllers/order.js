@@ -231,18 +231,51 @@ router.put(
   isAuthenticated,
   catchAsyncErrors(async (req, res, next) => {
     try {
-      const { orderId, status } = req.body;
-      console.log(orderId, status)
+      const { orderId, status, productId } = req.body;
       const order = await Order.findById(orderId);
       if (!order) {
         return next(new ErrorHandler("Order not found", 404));
       }
-    order.Status = status || "Refund Requested";
+
+      if (productId) {
+        let matched = false;
+        order.cart = order.cart.map((item) => {
+          const itemProductId = (item.product || item._id)?.toString();
+          if (itemProductId === productId?.toString()) {
+            matched = true;
+            return {
+              ...item,
+              isRefundRequested: true,
+              refundStatus: status || "Refund Requested",
+            };
+          }
+          return item;
+        });
+
+        if (!matched) {
+          return next(new ErrorHandler("Product not found in this order", 404));
+        }
+
+        const allItemsRefundRequested = order.cart.every(
+          (item) => item?.isRefundRequested || item?.refundStatus
+        );
+
+        if (allItemsRefundRequested) {
+          order.Status = status || "Refund Requested";
+          order.status = status || "Refund Requested";
+        }
+      } else {
+        order.Status = status || "Refund Requested";
+        order.status = status || "Refund Requested";
+      }
+
       await order.save({ validateBeforeSave: false });
       return res.status(200).json({
         success: true,
         order,
-        message: "Refund request updated successfully",
+        message: productId
+          ? "Item refund request submitted successfully"
+          : "Refund request updated successfully",
       })
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));

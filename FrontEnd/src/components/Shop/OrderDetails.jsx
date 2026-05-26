@@ -23,16 +23,21 @@ const OrderDetails = () => {
     }, [dispatch, seller?._id]);
 
     const data = orders?.find((item) => item._id === id);
-    const checkoutGroupKey = data?.paymentInfo?.id || data?._id;
-    const groupedOrders = orders?.filter((item) => (item?.paymentInfo?.id || item?._id) === checkoutGroupKey) || [];
-    const groupedItems = groupedOrders.flatMap((order) =>
-        (order.cart || []).map((item) => ({
-            ...item,
-            __orderId: order._id,
-            __orderStatus: order.Status,
-        }))
-    );
-    const groupedTotalPrice = groupedOrders[0]?.totalPrice ?? data?.totalPrice;
+    const orderItems = data?.cart || [];
+    const getItemSubtotal = (item) => {
+        const quantity = Number(item?.qty || 1);
+        const unitPrice = Number(item?.discountPrice || item?.price || 0);
+        const itemDiscount = Number(item?.itemDiscount || 0);
+
+        return Math.max(quantity * unitPrice - itemDiscount, 0);
+    };
+
+    const getItemDelivery = (item) => getItemSubtotal(item) * 0.1;
+    const getItemTotal = (item) => getItemSubtotal(item) + getItemDelivery(item);
+
+    const orderItemSubtotal = orderItems.reduce((total, item) => total + getItemSubtotal(item), 0);
+    const orderDelivery = orderItems.reduce((total, item) => total + getItemDelivery(item), 0);
+    const groupedTotalPrice = orderItemSubtotal + orderDelivery;
 
     const hasReviewed = (item) => Boolean(item?.isReviewed);
 
@@ -94,7 +99,7 @@ const OrderDetails = () => {
         }
     }
 
-  
+
 
     return (
         <div className="py-6 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50">
@@ -147,7 +152,7 @@ const OrderDetails = () => {
                         Order Items
                     </h3>
                     <div className="space-y-3">
-                        {groupedItems.map((item, index) => (
+                        {orderItems.map((item, index) => (
                             <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                                 <img
                                     src={`${backend_url}/${item.images[0]}`}
@@ -158,12 +163,17 @@ const OrderDetails = () => {
                                     <div className="font-medium text-gray-800 text-sm mb-1">
                                         {item.name}
                                     </div>
-                                    <div className="text-sm text-gray-600">
-                                        <span className="text-pink-600 font-medium">US${item.discountPrice}</span>
-                                        <span className="mx-2">×</span>
-                                        <span>{item.qty}</span>
-                                        <span className="mx-2">=</span>
-                                        <span className="font-semibold">US${(item.discountPrice * item.qty).toFixed(2)}</span>
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                        <p>
+                                            <span className="text-pink-600 font-medium">US$ {Number(item.discountPrice || item.price || 0).toFixed(2)}</span>
+                                            <span className="mx-2">×</span>
+                                            <span>{item.qty}</span>
+                                            <span className="mx-2">=</span>
+                                            <span className="font-semibold">US$ {getItemSubtotal(item).toFixed(2)}</span>
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            Delivery: US$ {getItemDelivery(item).toFixed(2)} | Item total: US$ {getItemTotal(item).toFixed(2)}
+                                        </p>
                                     </div>
                                 </div>
                                 {hasReviewed(item) && (
@@ -176,8 +186,16 @@ const OrderDetails = () => {
                     </div>
                     <div className="border-t border-gray-200 mt-3 pt-3 text-right">
                         <div className="text-base">
+                            <span className="text-gray-600">Item subtotal: </span>
+                            <strong className="text-xl text-pink-600">US$ {orderItemSubtotal.toFixed(2)}</strong>
+                        </div>
+                        <div className="text-base mt-1">
+                            <span className="text-gray-600">Delivery: </span>
+                            <strong className="text-xl text-pink-600">US$ {orderDelivery.toFixed(2)}</strong>
+                        </div>
+                        <div className="text-base mt-1">
                             <span className="text-gray-600">Total Price: </span>
-                            <strong className="text-xl text-pink-600">US$ {groupedTotalPrice}</strong>
+                            <strong className="text-xl text-pink-600">US$ {groupedTotalPrice.toFixed(2)}</strong>
                         </div>
                     </div>
                 </div>
@@ -306,7 +324,7 @@ const OrderDetails = () => {
                     </div>
                 </div>
 
-             
+
             </div>
         </div>
     )

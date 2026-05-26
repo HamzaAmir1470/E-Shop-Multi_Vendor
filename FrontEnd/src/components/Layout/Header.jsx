@@ -233,7 +233,7 @@ const Header = ({ activeHeading }) => {
 
           {/* SELLER BUTTON */}
           <div className={styles.button}>
-            <Link to="/dashboard" className="flex items-center text-white">
+            <Link to={isSeller ? "/dashboard" : "/shop-create"} className="flex items-center text-white">
               {isSeller ? "Go to Dashboard" : "Become a Seller"}
               <IoIosArrowForward className="ml-1" />
             </Link>
@@ -504,7 +504,7 @@ const Header = ({ activeHeading }) => {
 
               <div className="mx-4">
                 <Link
-                  to="/dashboard"
+                  to={isSeller ? "/dashboard" : "/shop-create"}
                   onClick={() => setOpen(false)}
                   className="
                   group

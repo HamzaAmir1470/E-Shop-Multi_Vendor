@@ -82,13 +82,21 @@ const AllOrders = () => {
             ),
         },
     ];
-    const groupedOrders = groupOrdersByCheckout(orders || []);
 
-    const rows = groupedOrders.map(({ representative, orders: orderGroup }) => ({
-        id: representative._id,
-        itemsQty: orderGroup.reduce((total, order) => total + (order.cart?.length || 0), 0),
-        total: `US$ ${representative.totalPrice}`,
-        status: representative.orderStatus || representative.Status,
+    const getOrderSubtotal = (order) =>
+        (order.cart || []).reduce((total, item) => {
+            const quantity = Number(item.qty || 1);
+            const unitPrice = Number(item.discountPrice || item.price || 0);
+            const itemDiscount = Number(item.itemDiscount || 0);
+
+            return total + Math.max(quantity * unitPrice - itemDiscount, 0);
+        }, 0);
+
+    const rows = (orders || []).map((order) => ({
+        id: order._id,
+        itemsQty: order.cart?.length || 0,
+        total: `US$ ${(getOrderSubtotal(order) * 1.1).toFixed(2)}`,
+        status: order.orderStatus || order.Status,
     }));
 
 
