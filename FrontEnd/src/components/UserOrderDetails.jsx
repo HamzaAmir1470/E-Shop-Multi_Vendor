@@ -12,6 +12,7 @@ import { toast } from "react-toastify";
 import { getAllOrdersUser } from '../redux/actions/order.js';
 import { RxCross1 } from "react-icons/rx";
 import { AiFillStar, AiOutlineStar } from "react-icons/ai";
+import { HiOutlineReceiptRefund } from 'react-icons/hi';
 
 const UserOrderDetails = () => {
   const { orders } = useSelector((state) => state.order);
@@ -21,7 +22,6 @@ const UserOrderDetails = () => {
   const [selectedItem, setSelectedItem] = React.useState(null);
   const [rating, setRating] = React.useState(1);
   const [comment, setComment] = React.useState("");
-  const [status, setStatus] = React.useState("");
   const { id } = useParams();
 
   useEffect(() => {
@@ -41,7 +41,7 @@ const UserOrderDetails = () => {
   const isDeliveredOrder = groupedOrders.some((order) => order.Status === "Delivered");
   const groupedTotalPrice = groupedOrders[0]?.totalPrice ?? data?.totalPrice;
 
-  const reviewHandler = async (e) => {
+  const reviewHandler = async () => {
     await axios.put(`${server}/order/create-new-review`, {
       user,
       rating,
@@ -105,6 +105,27 @@ const UserOrderDetails = () => {
         return type?.toUpperCase() || 'Card';
     }
   }
+
+  const refundHandler = async () => {
+    try {
+      const refundOrderId = data?._id || id;
+      console.log(refundOrderId)
+      if (!refundOrderId) {
+        toast.error("Unable to identify the order for refund.");
+        return;
+      }
+
+      const response = await axios.put(
+        `${server}/order/request-refund`,
+        { orderId: refundOrderId, status: "Processing Refund" },
+        { withCredentials: true }
+      );
+
+      toast.success(response?.data?.message || "Refund request submitted successfully.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to request refund.");
+    }
+  };
 
   return (
     <div className="py-6 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50">
@@ -394,6 +415,24 @@ const UserOrderDetails = () => {
             Send Message!
           </div>
         </Link>
+        {isDeliveredOrder && (
+          <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-5">
+            <h4 className='text-base font-semibold text-gray-800 mb-3'>
+              Refund Action
+            </h4>
+            <p className="text-sm text-gray-600 mb-4">
+              This order has been delivered, so refund handling is available from here.
+            </p>
+            <button
+              type="button"
+              onClick={refundHandler}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer"
+            >
+              <HiOutlineReceiptRefund size={18} />
+              Refund Order
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

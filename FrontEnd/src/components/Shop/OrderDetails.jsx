@@ -94,7 +94,7 @@ const OrderDetails = () => {
         }
     }
 
-    const isDeliveredOrder = data?.Status === 'Delivered';
+  
 
     return (
         <div className="py-6 px-4 sm:px-6 lg:px-8 min-h-screen bg-gray-50">
@@ -306,24 +306,7 @@ const OrderDetails = () => {
                     </div>
                 </div>
 
-                {isDeliveredOrder && (
-                    <div className="mt-6 bg-white rounded-lg shadow-sm border border-gray-200 p-5">
-                        <h4 className='text-base font-semibold text-gray-800 mb-3'>
-                            Refund Action
-                        </h4>
-                        <p className="text-sm text-gray-600 mb-4">
-                            This order has been delivered, so refund handling is available from here.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={() => navigate('/dashboard-refunds')}
-                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer"
-                        >
-                            <HiOutlineReceiptRefund size={18} />
-                            Refund Order
-                        </button>
-                    </div>
-                )}
+             
             </div>
         </div>
     )

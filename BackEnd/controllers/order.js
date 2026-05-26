@@ -74,7 +74,7 @@ router.get(
 // Get all orders of a shop
 router.get(
   "/get-seller-all-orders/:shopId",
-  isAuthenticated,
+  isSeller,
   catchAsyncErrors(async (req, res, next) => {
     try {
       const orders = await Order.find({
@@ -219,6 +219,31 @@ router.put(
         success: true,
         message: "Reviewed Successfully!",
       });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// Refund request for a product
+router.put(
+  "/request-refund",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { orderId, status } = req.body;
+      console.log(orderId, status)
+      const order = await Order.findById(orderId);
+      if (!order) {
+        return next(new ErrorHandler("Order not found", 404));
+      }
+    order.Status = status || "Refund Requested";
+      await order.save({ validateBeforeSave: false });
+      return res.status(200).json({
+        success: true,
+        order,
+        message: "Refund request updated successfully",
+      })
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
