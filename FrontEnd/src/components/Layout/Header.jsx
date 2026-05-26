@@ -422,9 +422,9 @@ const Header = ({ activeHeading }) => {
 
         {/* MOBILE SIDEBAR */}
         {open && (
-          <div className="fixed inset-0 bg-black/50 z-50 mb-50" onClick={() => setOpen(false)}>
+          <div className="fixed inset-0 bg-black/50 z-50" onClick={() => setOpen(false)}>
             <div
-              className="fixed top-0 left-0 w-[85%] max-w-[400px] h-full bg-white z-50 shadow-xl overflow-y-auto"
+              className="fixed top-0 left-0 w-[85%] max-w-[400px] h-[100dvh] bg-white z-50 shadow-xl overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="sticky top-0 bg-white z-10">

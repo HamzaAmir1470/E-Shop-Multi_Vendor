@@ -26,7 +26,7 @@ const Cart = ({ setOpenCart }) => {
   return (
     /* BACKDROP */
     <div
-      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex justify-end"
+      className="fixed inset-0 bg-black/40 backdrop-blur-sm z-150 flex justify-end"
       onClick={() => setOpenCart(false)}
     >
       {/* CART PANEL - Responsive sizing */}
