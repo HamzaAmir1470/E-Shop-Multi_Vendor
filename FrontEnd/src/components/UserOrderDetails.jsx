@@ -114,6 +114,8 @@ const UserOrderDetails = () => {
   const hasRefundRequested = (item) =>
     Boolean(item?.isRefundRequested || item?.refundStatus === "Processing Refund" || item?.refundStatus === "Refund Requested");
 
+  const isRefunding = (item) => item?.refundStatus === "Processing Refund";
+
   const refundItemHandler = async (item) => {
     try {
       const refundOrderId = item?.__orderId || data?._id || id;
@@ -216,7 +218,7 @@ const UserOrderDetails = () => {
                       <div className="px-4 py-2 rounded-md text-xs font-semibold bg-green-50 text-green-700 border border-green-200">
                         Reviewed
                       </div>
-                    ) : (
+                    ) : !isRefunding(item) && (
                       <div
                         className={`${styles.button} text-white`}
                         onClick={() => {
@@ -228,7 +230,16 @@ const UserOrderDetails = () => {
                       </div>
                     )}
 
-                    {hasRefundRequested(item) ? (
+                    {isRefunding(item) ? (
+                      <button
+                        type="button"
+                        className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-semibold shadow-md shadow-orange-200/60 border border-orange-300/70 cursor-not-allowed opacity-95"
+                        disabled
+                      >
+                        <HiOutlineReceiptRefund size={15} className="animate-pulse" />
+                        Refunding
+                      </button>
+                    ) : hasRefundRequested(item) ? (
                       <button
                         type="button"
                         className="inline-flex items-center justify-center gap-1 px-3 py-1.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200 text-xs font-medium cursor-not-allowed"
