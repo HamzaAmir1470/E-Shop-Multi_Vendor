@@ -52,11 +52,15 @@ const ShopDashboardPage = () => {
                 <div className={`
                     ${isMobile ? 'fixed inset-y-0 left-0 z-40 transform transition-transform duration-300 ease-in-out' : 'relative'}
                     ${isMobile ? (isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full') : 'translate-x-0'}
-                    w-[280px] bg-white border-r border-gray-200 shadow-lg
+                    w-70 bg-white border-r border-gray-200 shadow-lg
                     ${isMobile ? 'h-full overflow-y-auto' : 'h-[calc(100vh-64px)] overflow-y-auto sticky top-16'}
                 `}>
                     <div className="pt-6">
-                        <DashboardSidebar active={1} toggleMobileMenu={isMobile ? toggleMobileMenu : null} />
+                        <DashboardSidebar
+                            active={1}
+                            isMobile={isMobile}
+                            toggleMobileMenu={isMobile ? toggleMobileMenu : null}
+                        />
                     </div>
                 </div>
 
@@ -72,7 +76,7 @@ const ShopDashboardPage = () => {
                 <div className={`
                     flex-1 transition-all duration-300
                     ${isMobile ? 'w-full' : 'ml-0'}
-                    mt-16
+                    mt-0
                 `}>
                     <DashboardHero isMobile={isMobile} />
                 </div>

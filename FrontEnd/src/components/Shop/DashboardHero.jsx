@@ -261,7 +261,7 @@ const DashboardHero = ({ isMobile }) => {
         <div className="w-full bg-gray-50 min-h-screen p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
             {/* Header */}
             <div className="mb-6 md:mb-8">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard Overview</h3>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900">Overview</h3>
                 <p className="text-sm md:text-base text-gray-500 mt-1">
                     Welcome back, {seller?.name || 'Seller'}!
                 </p>

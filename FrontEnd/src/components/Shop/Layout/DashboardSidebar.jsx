@@ -8,8 +8,9 @@ import { CiMoneyBill, CiSettings } from "react-icons/ci";
 import { Link } from "react-router-dom";
 import { BiMessageSquareDetail } from "react-icons/bi";
 import { HiOutlineReceiptRefund } from "react-icons/hi";
+import { IoCloseOutline } from "react-icons/io5";
 
-const DashboardSideBar = ({ active }) => {
+const DashboardSideBar = ({ active, isMobile = false, toggleMobileMenu }) => {
     const menuItems = [
         { id: 1, label: "Dashboard", icon: RxDashboard, path: "/dashboard" },
         { id: 2, label: "All Orders", icon: FiShoppingBag, path: "/dashboard-orders" },
@@ -25,11 +26,25 @@ const DashboardSideBar = ({ active }) => {
     ];
 
     return (
-        <div className="h-screen bg-white border-r border-gray-200 sticky top-0 left-0 z-10
-                    w-16 lg:w-64 flex flex-col items-center lg:items-start 
-                    py-4 overflow-y-auto transition-all duration-300 ease-in-out">
+        <div className={`${isMobile ? "min-h-full w-full" : "h-screen w-16 lg:w-64"} bg-white border-r border-gray-200 sticky top-0 left-0 z-10
+                    flex flex-col ${isMobile ? "items-start" : "items-center lg:items-start"} 
+                    py-4 overflow-y-auto transition-all duration-300 ease-in-out`}>
 
-            {/* Logo/Header Section (Optional) */}
+            {isMobile && toggleMobileMenu && (
+                <div className="w-full flex items-center justify-between px-4 mb-4">
+                    <h2 className="text-lg font-bold text-gray-800">Dashboard</h2>
+                    <button
+                        type="button"
+                        onClick={toggleMobileMenu}
+                        className="w-10 h-10 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center hover:bg-gray-200 transition-colors"
+                        aria-label="Close dashboard menu"
+                    >
+                        <IoCloseOutline size={24} />
+                    </button>
+                </div>
+            )}
+
+            {/* Logo/Header Section (Desktop only) */}
             <div className="hidden lg:flex px-4 mb-6">
                 <h2 className="text-xl font-bold text-gray-800">Dashboard</h2>
             </div>
@@ -49,13 +64,13 @@ const DashboardSideBar = ({ active }) => {
                                     ? "bg-green-500 text-white shadow-md"
                                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
                                 }
-                justify-center lg:justify-start group`}
+                        ${isMobile ? "justify-start" : "justify-center lg:justify-start"} group`}
                         >
                             <Icon
                                 size={22}
                                 className={`${isActive ? "text-white" : "text-gray-500 group-hover:text-gray-700"}`}
                             />
-                            <span className="hidden lg:block ml-3 text-sm font-medium whitespace-nowrap">
+                            <span className={`${isMobile ? "block" : "hidden lg:block"} ml-3 text-sm font-medium whitespace-nowrap`}>
                                 {item.label}
                             </span>
 
@@ -69,7 +84,7 @@ const DashboardSideBar = ({ active }) => {
             </div>
 
             {/* Bottom padding/spacer */}
-            <div className="flex-grow"></div>
+            <div className="grow"></div>
 
             {/* Optional: User profile/Logout section */}
             <div className="hidden lg:block w-full px-3 pt-4 mt-4 border-t border-gray-100">
