@@ -27,7 +27,7 @@ const DashboardHero = ({ isMobile }) => {
         dispatch(getAllProductsShop(sellerId));
     }, [dispatch, sellerId]);
 
-    const availableBalance = Number(seller?.availableBalance || 0).toFixed(2);
+    // const availableBalance = Number(seller?.availableBalance || 0).toFixed(2);
     const totalOrders = orders?.length || 0;
     const totalProducts = products?.length || 0;
     const isRefundSuccess = (order) => {
@@ -37,6 +37,8 @@ const DashboardHero = ({ isMobile }) => {
         return paymentStatus === 'refunded' || /refund/.test(status) && /success/.test(status) || anyItemRefunded;
     }
 
+
+
     const isDeliveredOrder = (order) => {
         const status = (order?.Status || order?.status || "").toString().toLowerCase();
         return status === 'delivered' || isRefundSuccess(order);
@@ -44,16 +46,22 @@ const DashboardHero = ({ isMobile }) => {
 
     const normalizeStatus = (status) => {
         if (!status) return '';
-        // collapse duplicate adjacent words (e.g., "Refund Success Refund Success")
         const words = status.split(/\s+/);
         const deduped = words.filter((w, i) => i === 0 || w !== words[i - 1]);
         return deduped.join(' ');
     }
 
-    const deliveredOrders = orders?.filter(order => isDeliveredOrder(order)).length || 0;
+    const deliveredOrdersList = orders?.filter(order => isDeliveredOrder(order)) || [];
+    const deliveredOrders = deliveredOrdersList.length || 0;
     const pendingOrders = totalOrders - deliveredOrders;
     const completionRate = totalOrders ? (deliveredOrders / totalOrders) * 100 : 0;
 
+    const totalearningswithoutTax = deliveredOrdersList.reduce((acc, item) => {
+        return acc + Number(item?.totalPrice || 0);
+    }, 0);
+
+    const serviceCharge = totalearningswithoutTax * 0.1;
+    const availableBalance = Math.floor(totalearningswithoutTax - serviceCharge);
     // Responsive columns for DataGrid
     const getColumns = () => {
         const baseColumns = [
@@ -129,7 +137,7 @@ const DashboardHero = ({ isMobile }) => {
             headerName: "",
             sortable: false,
             renderCell: (params) => (
-                <Link to={`/dashboard/order/${params.id}`}>
+                <Link to={`/order/${params.id}`}>
                     <Button
                         variant="outlined"
                         size="small"
@@ -483,7 +491,7 @@ const DashboardHero = ({ isMobile }) => {
                                                 </div>
                                             </div>
                                             <div className="ml-3 flex-shrink-0">
-                                                <Link to={`/dashboard/order/${r.id}`} aria-label={`View order ${r.id}`}>
+                                                <Link to={`/order/${r.id}`} aria-label={`View order ${r.id}`}>
                                                     <Button
                                                         variant="outlined"
                                                         size="small"
