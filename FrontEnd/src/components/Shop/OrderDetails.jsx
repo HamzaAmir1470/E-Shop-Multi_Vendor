@@ -19,10 +19,28 @@ const OrderDetails = () => {
     const { id } = useParams();
 
     useEffect(() => {
-        dispatch(getAllOrdersShop(seller._id));
+        if (seller?._id) {
+            dispatch(getAllOrdersShop(seller._id));
+        }
     }, [dispatch, seller?._id]);
 
     const data = orders?.find((item) => item._id === id);
+    const currentStatus = data?.Status || data?.status || "";
+    const hasRefundFlow = Boolean(
+        /refund/i.test(currentStatus) ||
+        (data?.cart || []).some((item) => item?.isRefundRequested || item?.refundStatus)
+    );
+    const shippingStatusOptions = [
+        "Pending",
+        "Processing",
+        "Transferred to delivery partner",
+        "Shipping",
+        "Received by delivery partner",
+        "On the way",
+        "Delivered",
+    ];
+    const refundStatusOptions = ["Processing Refund", "Refund Success"];
+
     const orderItems = data?.cart || [];
     const getItemSubtotal = (item) => {
         const quantity = Number(item?.qty || 1);
@@ -57,6 +75,27 @@ const OrderDetails = () => {
                 toast.error(error.response?.data?.message || "Failed to update order status.");
             });
     }
+
+    const orderRefundUpdateHandler = async () => {
+        try {
+            const { data: response } = await axios.put(
+                `${server}/order/order-refund-success/${id}`,
+                { status: "Refund Success" },
+                { withCredentials: true }
+            );
+
+            if (response.success) {
+                toast.success(response?.message || "Refund request accepted successfully!");
+                dispatch(getAllOrdersShop(seller._id));
+                navigate("/dashboard-orders");
+                return;
+            }
+
+            toast.error(response?.message || "Failed to accept refund request.");
+        } catch (error) {
+            toast.error(error.response?.data?.message || "Failed to accept refund request.");
+        }
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -107,7 +146,7 @@ const OrderDetails = () => {
                 {/* Header Section */}
                 <div className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-pink-500 to-rose-500 rounded-lg shadow-md">
+                        <div className="p-2 bg-linear-to-br from-pink-500 to-rose-500 rounded-lg shadow-md">
                             <BsFillBagFill size={20} color="white" />
                         </div>
                         <div>
@@ -117,7 +156,7 @@ const OrderDetails = () => {
                         </div>
                     </div>
                     <Link to="/dashboard-orders">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-pink-500 to-rose-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                             </svg>
@@ -281,46 +320,66 @@ const OrderDetails = () => {
                     </h4>
                     <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-end">
                         <div className="flex-1 w-full">
-                            <select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value)}
-                                className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all outline-none bg-white'
-                            >
-                                <option value="">Select new status...</option>
-                                {[
-                                    "Pending",
-                                    "Processing",
-                                    "Transferred to delivery partner",
-                                    "Shipping",
-                                    "Received",
-                                    "On the way",
-                                    "Delivered",
-                                ]
-                                    .slice(
-                                        [
-                                            "Pending",
-                                            "Processing",
-                                            "Transferred to delivery partner",
-                                            "Shipping",
-                                            "Received",
-                                            "On the way",
-                                            "Delivered",
-                                        ].indexOf(data?.Status) + 1
-                                    )
-                                    .map((option, index) => (
-                                        <option key={index} value={option}>
-                                            {option}
-                                        </option>
-                                    ))}
-                            </select>
+                            {currentStatus === "Refund Success" ? (
+                                <span className="inline-flex px-3 py-2 rounded-lg text-sm font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                    Refunded Successfully
+                                </span>
+                            ) : currentStatus === "Processing Refund" ? (
+                                <div className="space-y-2">
+                                    <div className="w-full px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-sm font-medium flex items-center gap-2">
+                                        <HiOutlineReceiptRefund className="text-amber-600" />
+                                        Refund request is waiting for seller approval.
+                                    </div>
+                                    
+                                </div>
+                            ) : hasRefundFlow ? (
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all outline-none bg-white'
+                                >
+                                    <option value="">Select new status...</option>
+                                    {refundStatusOptions
+                                        .slice(refundStatusOptions.indexOf(currentStatus) + 1)
+                                        .map((option, index) => (
+                                            <option key={index} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                </select>
+                            ) : (
+                                <select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value)}
+                                    className='w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all outline-none bg-white'
+                                >
+                                    <option value="">Select new status...</option>
+                                    {shippingStatusOptions
+                                        .slice(shippingStatusOptions.indexOf(currentStatus) + 1)
+                                        .map((option, index) => (
+                                            <option key={index} value={option}>
+                                                {option}
+                                            </option>
+                                        ))}
+                                </select>
+                            )}
                         </div>
-                        <button
-                            className="inline-flex items-center justify-center px-5 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-rose-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={orderUpdateHandler}
-                            disabled={!status}
-                        >
-                            Update Status
-                        </button>
+                        {currentStatus === "Processing Refund" ? (
+                            <button
+                                className="inline-flex items-center justify-center px-5 py-2 rounded-lg bg-linear-to-r from-amber-500 to-orange-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={orderRefundUpdateHandler}
+                            >
+                                Accept Refund Request
+                            </button>
+                        ) : currentStatus !== "Refund Success" && (
+                            <button
+                                className="inline-flex items-center justify-center px-5 py-2 rounded-lg bg-linear-to-r from-pink-500 to-rose-500 text-white font-medium text-sm shadow-sm hover:shadow-md hover:scale-105 transition-all duration-300 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                onClick={orderUpdateHandler}
+                                disabled={!status}
+                            >
+                                Update Status
+                            </button>
+                        )}
                     </div>
                 </div>
 

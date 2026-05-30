@@ -145,6 +145,65 @@ router.put(
   })
 );
 
+// Accept refund request for seller
+router.put(
+  "/order-refund-success/:id",
+  isSeller,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const order = await Order.findById(req.params.id);
+
+      if (!order) {
+        return next(new ErrorHandler("Order not found", 404));
+      }
+
+      const nextStatus = req.body.status || "Refund Success";
+      const isRefundFlow = /refund/i.test(order.Status) || order.cart.some((item) => item?.isRefundRequested || item?.refundStatus);
+
+      if (!isRefundFlow) {
+        return next(new ErrorHandler("This order is not in refund flow", 400));
+      }
+
+      await Promise.all(
+        order.cart.map(async (item) => {
+          const productId = item.product || item._id;
+          const quantity = Number(item.qty || item.quantity || 0);
+
+          if (!productId || !quantity) return;
+
+          const product = await Product.findById(productId);
+          if (!product) return;
+
+          product.stock += quantity;
+          product.sold_out = Math.max(Number(product.sold_out || 0) - quantity, 0);
+          await product.save({ validateBeforeSave: false });
+        })
+      );
+
+      order.cart = order.cart.map((item) => ({
+        ...item,
+        refundStatus: nextStatus,
+      }));
+
+      order.Status = nextStatus;
+
+      if (order.paymentInfo) {
+        order.paymentInfo.status = "refunded";
+      }
+
+      await order.save({ validateBeforeSave: false });
+
+      return res.status(200).json({
+        success: true,
+        order,
+        message: "Refund request accepted successfully",
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 // review for a product
 router.put(
   "/create-new-review",
