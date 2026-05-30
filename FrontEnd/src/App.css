@@ -485,3 +485,41 @@ input::-webkit-inner-spin-button {
   border-right: 1px solid #e0e0e0;
   font-weight: 600;
 }
+
+/* Additional custom styles for DataGrid and animations */
+.MuiDataGrid-root .MuiDataGrid-cell:focus {
+  outline: none;
+}
+
+.MuiDataGrid-root .MuiDataGrid-cell:focus-within {
+  outline: none;
+}
+
+/* Smooth transition for stats cards */
+.stat-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Custom scrollbar for sidebar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
