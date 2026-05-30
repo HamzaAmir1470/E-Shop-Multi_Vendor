@@ -9,7 +9,7 @@ import ShopPreviewPage from '../pages/Shop/ShopPreviewPage.jsx'
 import ShopAllOrders from '../pages/Shop/ShopAllOrders.jsx'
 import ShopOrderDetails from '../pages/Shop/ShopOrderDetails.jsx'
 import ShopRefundsPage from '../pages/Shop/ShopRefundsPage.jsx'
-
+import ShopAllRefunds from '../pages/Shop/ShopAllRefunds.jsx'
 export {
     ShopHomePage,
     ShopDashboardPage,
@@ -22,4 +22,5 @@ export {
     ShopAllOrders,
     ShopOrderDetails,
     ShopRefundsPage,
+    ShopAllRefunds
 }

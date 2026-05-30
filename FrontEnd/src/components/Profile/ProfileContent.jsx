@@ -420,18 +420,14 @@ const AllRefundOrders = () => {
 };
 
 const TrackOrder = () => {
-    const orders = [
-        {
-            _id: "00s9f0sdg0s8fg908ds09g8s09df8g09d8",
-            orderItems: [
-                {
-                    name: "Iphone 14 pro Max",
-                },
-            ],
-            totalPrice: 120,
-            orderStatus: "Processing",
-        },
-    ];
+    const { user } = useSelector((state) => state.user);
+    const { orders } = useSelector((state) => state.order);
+    const dispatch = useDispatch();
+    useEffect(() => {
+        if (user?._id) {
+            dispatch(getAllOrdersUser(user._id));
+        }
+    }, [dispatch, user]);
 
     const columns = [
         { field: "id", headerName: "Order ID", minWidth: 150, flex: 0.7 },
@@ -460,7 +456,7 @@ const TrackOrder = () => {
         },
         {
             field: "actions",
-            headerName: "Track",
+            headerName: "Actions",
             minWidth: 150,
             flex: 1,
             sortable: false,
@@ -468,19 +464,29 @@ const TrackOrder = () => {
                 <Link to={`/user/track/order/${params.row.id}`}>
                     <Button variant="outlined" size="small">
                         <MdTrackChanges size={20} className="mr-1" />
-                        Track
+                        View
                     </Button>
                 </Link>
             ),
         },
     ];
 
-    const rows = orders.map((item) => ({
-        id: item._id,
-        itemsQty: item.orderItems.length,
-        total: `US$ ${item.totalPrice}`,
-        status: item.orderStatus,
+    const getOrderSubtotal = (order) =>
+        (order.cart || []).reduce((total, item) => {
+            const quantity = Number(item.qty || 1);
+            const unitPrice = Number(item.discountPrice || item.price || 0);
+            const itemDiscount = Number(item.itemDiscount || 0);
+
+            return total + Math.max(quantity * unitPrice - itemDiscount, 0);
+        }, 0);
+
+    const rows = (orders || []).map((order) => ({
+        id: order._id,
+        itemsQty: order.cart?.length || 0,
+        total: `US$ ${(getOrderSubtotal(order) * 1.1).toFixed(2)}`,
+        status: order.orderStatus || order.Status,
     }));
+
 
     return (
         <div className="w-full px-5 md:px-8 pt-4">
