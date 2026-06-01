@@ -102,7 +102,7 @@ export const getSingleProduct = (id) => async (dispatch) => {
         dispatch({ type: "getSingleProductRequest" });
 
         const { data } = await axios.get(
-            `${server}/get-product/${id}`
+            `${server}/product/get-product/${id}`
         );
 
         dispatch({

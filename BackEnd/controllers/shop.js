@@ -301,7 +301,6 @@ router.get("/get-shop-info/:id", catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
-// update shop avatar
 router.put(
     "/update-shop-avatar",
     isSeller,
@@ -309,12 +308,14 @@ router.put(
     catchAsyncErrors(async (req, res, next) => {
         try {
             const seller = await Shop.findById(req.seller._id);
+
             if (!seller) {
                 return res.status(404).json({
                     success: false,
                     message: "Seller not found",
                 });
             }
+
             if (!req.file) {
                 return res.status(400).json({
                     success: false,
@@ -323,14 +324,18 @@ router.put(
             }
 
             const existAvatarPath = `uploads/${seller.avatar}`;
-            fs.unlinkSync(existAvatarPath);
 
-            const fileUrl = path.join(req.file.filename);
+            if (fs.existsSync(existAvatarPath)) {
+                fs.unlinkSync(existAvatarPath);
+            }
+
             const shop = await Shop.findByIdAndUpdate(
                 req.seller._id,
-                { avatar: fileUrl },
+                { avatar: req.file.filename },
                 { new: true }
             );
+
+            console.log("Saved avatar:", req.file.filename);
 
             res.status(200).json({
                 success: true,
@@ -339,7 +344,8 @@ router.put(
         } catch (error) {
             return next(new ErrorHandler(error.message, 500));
         }
-    }));
+    })
+);
 
 // update shop information
 router.put(

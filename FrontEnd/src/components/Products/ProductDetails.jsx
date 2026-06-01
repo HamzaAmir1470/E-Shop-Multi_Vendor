@@ -3,11 +3,13 @@ import { Link, useNavigate } from 'react-router-dom'
 import styles from '../../styles/styles'
 import { AiOutlineShoppingCart, AiOutlineHeart, AiFillHeart, AiOutlineMessage } from 'react-icons/ai'
 import { backend_url } from '../../server.js'
+import { server } from '../../server.js'
 import { getAllProductsShop } from '../../redux/actions/product.js'
 import { useDispatch, useSelector } from 'react-redux'
 import { addToWishlist, removeFromWishlist } from '../../redux/actions/wishlist.js'
 import { addToCart } from '../../redux/actions/cart.js'
 import { toast } from 'react-toastify'
+import axios from 'axios'
 
 const getUserAvatarUrl = (user) => {
     const avatarValue = user?.avatar
@@ -99,15 +101,47 @@ const ProductDetails = ({ data }) => {
     const [count, setCount] = useState(1)
     const [click, setClick] = useState(false)
     const [select, setSelect] = useState(0)
+    const [shopInfo, setShopInfo] = useState(null)
 
     const navigate = useNavigate()
     const dispatch = useDispatch()
+    const shopId = data?.shopId || data?.shop?._id
 
     useEffect(() => {
-        if (data?.shop?._id) {
-            dispatch(getAllProductsShop(data.shop._id))
+        if (shopId) {
+            dispatch(getAllProductsShop(shopId))
         }
-    }, [dispatch, data?.shop?._id])
+    }, [dispatch, shopId])
+
+    useEffect(() => {
+        if (!shopId) {
+            setShopInfo(null)
+            return
+        }
+
+        let cancelled = false
+
+        const loadShopInfo = async () => {
+            try {
+                const res = await axios.get(`${server}/shop/get-shop-info/${shopId}`)
+                if (!cancelled) {
+                    setShopInfo(res.data.shop || null)
+                }
+            } catch (error) {
+                if (!cancelled) {
+                    setShopInfo(data?.shop || null)
+                }
+            }
+        }
+
+        loadShopInfo()
+
+        return () => {
+            cancelled = true
+        }
+    }, [data?.shop, shopId])
+
+    const shop = shopInfo || data?.shop
 
     useEffect(() => {
         if (wishlist && wishlist.find((i) => i._id === data?._id)) {
@@ -249,30 +283,32 @@ const ProductDetails = ({ data }) => {
                             </div>
 
                             <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 p-4 rounded-lg ${styles.card}`}>
-                                <Link to={`/shop/preview/${data?.shop?._id}`} className="flex items-center gap-4 hover:opacity-90 transition-opacity">
-                                    <img src={data?.shop?.avatar ? `${backend_url}${data.shop.avatar}` : 'https://via.placeholder.com/56'} alt={data.shop?.name} className="w-16 h-16 rounded-full object-cover ring-2 ring-white shadow-sm" onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
-                                    <div className="flex flex-col">
-                                        <h3 className={`${styles.shop_name} text-lg font-semibold`}>{data.shop?.name}</h3>
-                                        <div className="flex items-center gap-2 text-sm text-gray-600"><span className="font-medium">{avgRating || '—'}</span><span className="text-gray-400">•</span><span>{data.reviews?.length || 0} reviews</span></div>
+                                <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
+                                        <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                        <div>
+                                            <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
+                                            <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>
+                                        </div>
                                     </div>
                                 </Link>
 
                                 <div className="flex items-center gap-3">
                                     <button onClick={handleMessageSubmit} className="flex items-center bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-lg hover:shadow-md transition-shadow font-medium">Message Seller <AiOutlineMessage className="ml-2 text-lg" /></button>
-                                    <Link to={`/shop/preview/${data?.shop?._id}`} className="inline-block"><button className={`${styles.button} rounded-lg h-[42px] px-4`}>Visit Shop</button></Link>
+                                    <Link to={`/shop/preview/${shop?._id}`} className="inline-block"><button className={`${styles.button} rounded-lg h-[42px] px-4`}>Visit Shop</button></Link>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <ProductDetailsInfo data={data} products={products} />
+                    <ProductDetailsInfo data={data} products={products} shop={shop} />
                 </div>
             )}
         </div>
     )
 }
 
-const ProductDetailsInfo = ({ data, products }) => {
+const ProductDetailsInfo = ({ data, products, shop }) => {
     const [active, setActive] = useState(2)
     const [showFull, setShowFull] = useState(false)
     const [showAllReviews, setShowAllReviews] = useState(false)
@@ -333,7 +369,7 @@ const ProductDetailsInfo = ({ data, products }) => {
                             <div className='space-y-4'>
                                 {displayedReviews.map((review, index) => (
                                     <div key={review._id || index} className='w-full flex items-start p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100'>
-                                        <img src={getUserAvatarUrl(review.user || review)} alt={review.user?.name || review.name} className='w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-gray-100' onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }} />
+                                        <img src={review?.user || review} alt={review.user?.name || review.name} className='w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-gray-100' onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }} />
                                         <div className='flex-1'>
                                             <div className='flex items-center justify-between mb-1'>
                                                 <h5 className='font-semibold text-gray-800'>{review.user?.name || review.name}</h5>
@@ -373,27 +409,27 @@ const ProductDetailsInfo = ({ data, products }) => {
             {active === 3 && (
                 <div className="w-full p-6 grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="space-y-4">
-                        <Link to={`/shop/preview/${data?.shop?._id}`} onClick={(e) => e.stopPropagation()}>
+                        <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                                <img src={data?.shop?.avatar ? `${backend_url}${data.shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={data?.shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
                                 <div>
-                                    <h3 className={`${styles.shop_name} text-xl font-semibold`}>{data?.shop?.name}</h3>
+                                    <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                     <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>
                                 </div>
                             </div>
                         </Link>
 
-                        <p className="text-gray-700 leading-relaxed">{data?.shop?.description || 'Discover the perfect blend of quality and style with our premium product. Carefully crafted to meet your everyday needs, it delivers exceptional performance while maintaining a sleek, modern design.'}</p>
+                        <p className="text-gray-700 leading-relaxed">{shop?.description || 'Discover the perfect blend of quality and style with our premium product. Carefully crafted to meet your everyday needs, it delivers exceptional performance while maintaining a sleek, modern design.'}</p>
                     </div>
 
                     <div className="flex flex-col justify-start items-start lg:items-end space-y-4">
                         <div className="space-y-3 text-gray-800 w-full lg:w-auto">
-                            <h5 className="font-bold">Joined on: <span className="font-medium text-gray-700">{data.shop?.createdAt ? data.shop.createdAt.slice(0, 10) : 'N/A'}</span></h5>
+                            <h5 className="font-bold">Joined on: <span className="font-medium text-gray-700">{shop?.createdAt ? shop.createdAt.slice(0, 10) : 'N/A'}</span></h5>
                             <h5 className="font-semibold">Total Products: <span className="font-medium">{products?.length || 0}</span></h5>
                             <h5 className="font-semibold">Total Reviews: <span className="font-medium">{reviews?.length || 0}</span></h5>
                         </div>
                         <div className='pr-10'>
-                            <Link to={`/shop/preview/${data?.shop?._id}`} onClick={(e) => e.stopPropagation()}>
+                            <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                                 <button className={`${styles.button} rounded-lg h-[42px] px-5`}><span className="text-white font-medium">Visit Shop</span></button>
                             </Link>
                         </div>
