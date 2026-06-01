@@ -4,7 +4,7 @@ import { backend_url, server } from '../../server';
 import { FiMapPin, FiPhone, FiPackage, FiStar, FiCalendar, FiEdit2, FiLogOut } from 'react-icons/fi';
 import { MdStorefront } from 'react-icons/md';
 import axios from 'axios';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const getShopAvatarUrl = (avatar) => {
   if (!avatar) return 'https://via.placeholder.com/140';
@@ -194,16 +194,17 @@ const ShopInfo = ({ isOwner }) => {
         isOwner && (
           <div className="px-6 py-6 bg-gradient-to-t from-gray-50 to-white border-t border-gray-200">
             <div className="space-y-3">
+              <Link to="/settings">
+                <button
+                  className="w-full h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group"
+                  onClick={() => console.log('Edit shop')}
+                >
+                  <FiEdit2 size={18} className="group-hover:rotate-12 transition-transform" />
+                  <span>Edit Shop</span>
+                </button>
+              </Link>
               <button
-                className="w-full h-[48px] bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-2 group"
-                onClick={() => console.log('Edit shop')}
-              >
-                <FiEdit2 size={18} className="group-hover:rotate-12 transition-transform" />
-                <span>Edit Shop</span>
-              </button>
-
-              <button
-                className="w-full h-[48px] border-2 border-red-300 hover:border-red-400 text-red-600 hover:text-red-700 font-semibold rounded-xl bg-white hover:bg-red-50 transition-all duration-300 flex items-center justify-center gap-2 group"
+                className="w-full mt-3 h-[48px] border-2 border-red-300 hover:border-red-400 text-red-600 hover:text-red-700 font-semibold rounded-xl bg-white hover:bg-red-50 transition-all duration-300 flex items-center justify-center gap-2 group"
                 onClick={logoutHandler}
               >
                 <FiLogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
