@@ -37,6 +37,7 @@ const ProductDetailsCard = ({
 }) => {
     const { cart } = useSelector((state) => state.cart);
     const { wishlist } = useSelector((state) => state.wishlist);
+    const { seller } = useSelector((state) => state.seller);
     const [count, setCount] = useState(initialCount);
     const dispatch = useDispatch();
     const [inWishlist, setInWishlist] = useState(false);
@@ -112,7 +113,7 @@ const ProductDetailsCard = ({
 
     const handleAddToCart = async (e, id) => {
         e.stopPropagation();
-        
+
         if (typeof onAddToCartProp === 'function') {
             onAddToCartProp(e, id, { ...data, qty: count });
             return;
@@ -130,7 +131,7 @@ const ProductDetailsCard = ({
         }
 
         setIsAddingToCart(true);
-        
+
         setTimeout(() => {
             const cartData = { ...data, qty: count };
             dispatch(addToCart(cartData));
@@ -146,7 +147,7 @@ const ProductDetailsCard = ({
             text: data.description,
             url: window.location.href,
         };
-        
+
         if (navigator.share && window.innerWidth <= 768) {
             navigator.share(shareData).catch(() => {
                 navigator.clipboard.writeText(window.location.href);
@@ -158,24 +159,24 @@ const ProductDetailsCard = ({
         }
     };
 
-    // Calculate seller rating dynamically
+    // Prefer live seller from Redux when available, otherwise use embedded shop snapshot
+    const shop = (seller && seller._id && seller._id === data?.shop?._id) ? seller : (data?.shop || {});
+
+    // Calculate seller rating dynamically using resolved `shop`
     const calculateSellerRating = () => {
-        if (!data?.shop) return 0;
-        
-        // If shop has direct rating property
-        if (data.shop.ratings) return data.shop.ratings;
-        
-        // Calculate from shop reviews if available
-        if (data.shop.reviews && data.shop.reviews.length > 0) {
-            const totalRating = data.shop.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
-            return (totalRating / data.shop.reviews.length).toFixed(1);
+        if (!shop) return 0;
+
+        if (shop.ratings) return shop.ratings;
+
+        if (shop.reviews && shop.reviews.length > 0) {
+            const totalRating = shop.reviews.reduce((sum, review) => sum + (review.rating || 0), 0);
+            return (totalRating / shop.reviews.length).toFixed(1);
         }
-        
-        // Calculate from product reviews in this shop
-        if (data.shop.products && data.shop.products.length > 0) {
+
+        if (shop.products && shop.products.length > 0) {
             let totalRating = 0;
             let reviewCount = 0;
-            data.shop.products.forEach(product => {
+            shop.products.forEach(product => {
                 if (product.reviews && product.reviews.length > 0) {
                     product.reviews.forEach(review => {
                         totalRating += review.rating || 0;
@@ -185,14 +186,12 @@ const ProductDetailsCard = ({
             });
             if (reviewCount > 0) return (totalRating / reviewCount).toFixed(1);
         }
-        
+
         return 0;
     };
 
     const sellerRating = calculateSellerRating();
-    const totalSellerRatings = data?.shop?.reviews?.length || 
-                               data?.shop?.total_reviews || 
-                               data?.shop?.rating_count || 0;
+    const totalSellerRatings = shop?.reviews?.length || shop?.total_reviews || shop?.rating_count || 0;
 
     if (!data) return null;
     if (!data.images || !data.images[0]) data.images = [''];
@@ -210,7 +209,7 @@ const ProductDetailsCard = ({
     })();
 
     return (
-        <div 
+        <div
             className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 sm:p-4 animate-fadeIn"
             onClick={() => setOpen(false)}
         >
@@ -243,7 +242,7 @@ const ProductDetailsCard = ({
                             className={`w-full h-auto max-h-[35vh] sm:max-h-[40vh] object-contain transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                             onLoad={() => setImageLoaded(true)}
                         />
-                        
+
                         {/* Stock Badge */}
                         {isOutOfStock && (
                             <div className="absolute top-2 left-2 sm:top-4 sm:left-4 bg-red-500 text-white px-2 py-0.5 sm:px-3 sm:py-1 rounded-full text-xs sm:text-sm font-semibold shadow-lg">
@@ -268,11 +267,10 @@ const ProductDetailsCard = ({
                                         setSelectedImage(idx);
                                         setImageLoaded(false);
                                     }}
-                                    className={`relative shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-                                        selectedImage === idx 
-                                            ? 'border-indigo-500 shadow-lg scale-95' 
+                                    className={`relative shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx
+                                            ? 'border-indigo-500 shadow-lg scale-95'
                                             : 'border-gray-200 hover:border-gray-400'
-                                    }`}
+                                        }`}
                                 >
                                     <img
                                         src={`${baseURL}/${img}`}
@@ -290,21 +288,21 @@ const ProductDetailsCard = ({
                             <div className="flex items-center justify-between gap-2 p-2 sm:p-3 bg-gray-50 rounded-xl">
                                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                     <img
-                                        src={`${baseURL}/${data.shop?.avatar || data.shop?.shop_avatar?.[0] || ''}`}
+                                        src={`${baseURL}/${shop?.avatar || shop?.shop_avatar?.[0] || ''}`}
                                         alt=""
                                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-md"
-                                        onError={(e) => { 
-                                            e.target.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+                                        onError={(e) => {
+                                            e.currentTarget.src = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
                                         }}
                                     />
                                     <div className="min-w-0 flex-1">
                                         {linkableShop ? (
-                                            <Link 
-                                                to={`/shop/preview/${data?.shop?._id}`} 
+                                            <Link
+                                                to={`/shop/preview/${shop?._id}`}
                                                 onClick={(e) => e.stopPropagation()}
                                                 className="font-semibold text-gray-800 hover:text-indigo-600 transition-colors truncate block text-sm sm:text-base"
                                             >
-                                                {data?.shop?.name || 'Unknown Shop'}
+                                                {shop?.name || 'Unknown Shop'}
                                             </Link>
                                         ) : (
                                             <h5 className="font-semibold text-gray-800 text-sm sm:text-base truncate">
@@ -321,7 +319,7 @@ const ProductDetailsCard = ({
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 {showMessageButton && (
                                     <button
                                         onClick={handleMessageSubmit}
@@ -337,7 +335,7 @@ const ProductDetailsCard = ({
                 </div>
 
                 {/* Right Section - Product Details with independent scroll */}
-                <div 
+                <div
                     ref={rightPanelRef}
                     className="w-full lg:w-1/2 p-4 sm:p-5 lg:p-6 overflow-y-auto flex-1 lg:overflow-y-auto"
                     style={{ maxHeight: 'calc(95vh - 0px)' }}
@@ -424,11 +422,10 @@ const ProductDetailsCard = ({
                                 <button
                                     onClick={(e) => handleAddToCart(e, data._id)}
                                     disabled={isOutOfStock || isAddingToCart}
-                                    className={`w-full sm:flex-1 h-10 sm:h-12 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${
-                                        isOutOfStock
+                                    className={`w-full sm:flex-1 h-10 sm:h-12 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${isOutOfStock
                                             ? 'bg-gray-300 cursor-not-allowed'
                                             : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl active:scale-98'
-                                    }`}
+                                        }`}
                                 >
                                     {isAddingToCart ? (
                                         <>
@@ -448,11 +445,10 @@ const ProductDetailsCard = ({
                                 {showWishlist && (
                                     <button
                                         onClick={(e) => inWishlist ? removeFromWishlistHandler(e, data) : addToWishlistHandler(e, data)}
-                                        className={`flex-1 sm:flex-none w-full sm:w-12 h-10 sm:h-12 rounded-xl border-2 transition-all duration-200 flex items-center justify-center active:scale-95 ${
-                                            inWishlist
+                                        className={`flex-1 sm:flex-none w-full sm:w-12 h-10 sm:h-12 rounded-xl border-2 transition-all duration-200 flex items-center justify-center active:scale-95 ${inWishlist
                                                 ? 'border-red-200 bg-red-50 text-red-500'
                                                 : 'border-gray-300 hover:border-red-300 hover:bg-red-50 text-gray-600 hover:text-red-500'
-                                        }`}
+                                            }`}
                                     >
                                         {inWishlist ? <AiFillHeart size={18} className="sm:text-[22px]" /> : <AiOutlineHeart size={18} className="sm:text-[22px]" />}
                                     </button>

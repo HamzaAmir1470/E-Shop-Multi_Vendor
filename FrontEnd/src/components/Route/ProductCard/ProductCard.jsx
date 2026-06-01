@@ -19,6 +19,7 @@ import { addToCart } from "../../../redux/actions/cart.js";
 const ProductCard = ({ data, isEvent }) => {
     const { wishlist } = useSelector((state) => state.wishlist);
     const { cart } = useSelector((state) => state.cart);
+    const { seller } = useSelector((state) => state.seller);
     const [click, setClick] = useState(false);
     const [open, setOpen] = useState(false);
     const dispatch = useDispatch();
@@ -54,6 +55,9 @@ const ProductCard = ({ data, isEvent }) => {
     };
 
     const baseURL = server.replace('/api/v2', '');
+
+    // Prefer live seller from Redux if it matches this product's shop id
+    const shop = (seller && seller._id && seller._id === data?.shop?._id) ? seller : (data?.shop || {});
 
     // compute numeric rating from reviews or rating fields
     const ratingValue = (() => {
@@ -100,9 +104,9 @@ const ProductCard = ({ data, isEvent }) => {
             </Link>
 
             {/* Shop Name */}
-            <Link to={`/shop/preview/${data?.shop?._id}`} onClick={(e) => e.stopPropagation()}>
+            <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                 <h5 className={styles.shop_name}>
-                    {data?.shop?.name || "Unknown Shop"}
+                    {shop?.name || "Unknown Shop"}
                 </h5>
             </Link>
 
