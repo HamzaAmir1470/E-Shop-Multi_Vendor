@@ -27,15 +27,23 @@ const ShopSettings = () => {
 
         const formData = new FormData();
         formData.append("image", e.target.files[0]);
-        try {
-            const { data } = await axios.post(
-                `${server}/shop/upload-shop-image`,
-                formData,
-                { withCredentials: true }
-            );
-        } catch (error) {
-            console.error("Error uploading shop image:", error);
-        }
+        await axios.put(
+            `${server}/shop/update-shop-avatar`,
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+                withCredentials: true,
+            }
+
+        ).then((res) => {
+            toast.success("Shop image updated successfully!");
+            dispatch(loadSeller());
+        }).catch((error) => {
+            toast.error(error.response.data.message);
+        });
+
     };
 
     const updateHandler = async (e) => {
@@ -43,7 +51,7 @@ const ShopSettings = () => {
 
         await axios
             .put(
-                `${server}/shop/update-seller-info`,
+                `${server}/shop/update-shop-info`,
                 {
                     name,
                     address,
@@ -61,13 +69,13 @@ const ShopSettings = () => {
                 toast.error(error.response.data.message);
             });
     };
-        console.log("Seller data in ShopSettings:", seller);
+
     return (
         <div className="w-full min-h-screen bg-gray-50 py-10 px-4">
             <div className="max-w-5xl mx-auto bg-white rounded-3xl shadow-xl overflow-hidden">
 
                 {/* Header */}
-                <div className="bg-[#7288AE] border-b-4 border-blue-600 px-8 py-6 " >
+                <div className="bg-white border-b-4 border-blue-600 px-8 py-6 " >
                     <h1 className="text-2xl font-bold text-blue-700">
                         Shop Settings
                     </h1>
@@ -83,7 +91,7 @@ const ShopSettings = () => {
                             <img
                                 // src={seller?.avatar ? `${backend_url}${seller.avatar}` : ""}
                                 src={avatar ? URL.createObjectURL(avatar) : seller?.avatar ? `${backend_url}${seller.avatar}` : ""}
-                                
+
                                 alt={seller?.name ? `${seller.name} avatar` : "Shop avatar"}
                                 className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border-4 border-white shadow-xl transform hover:scale-105 transition-transform duration-300"
                             />

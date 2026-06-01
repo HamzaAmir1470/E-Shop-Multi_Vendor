@@ -7,7 +7,7 @@ import styles from "../../styles/styles";
 import { DataGrid } from "@mui/x-data-grid";
 import { Button } from "@mui/material";
 import { Link } from "react-router-dom";
-import { deleteUserAddress, updateUserInformation } from "../../redux/actions/user";
+import { deleteUserAddress, loadUser, updateUserInformation } from "../../redux/actions/user";
 import { toast } from "react-toastify";
 import axios from "axios";
 import { Country, State, City } from "country-state-city";
@@ -53,7 +53,7 @@ const ProfileContent = ({ active }) => {
             },
             withCredentials: true,
         }).then((res) => {
-            window.location.reload();
+            dispatch(loadUser());
             toast.success("Avatar updated successfully!");
         }).catch((err) => {
             toast.error("Failed to update avatar");

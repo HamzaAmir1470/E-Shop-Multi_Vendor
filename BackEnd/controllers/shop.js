@@ -301,4 +301,68 @@ router.get("/get-shop-info/:id", catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
+// update shop avatar
+router.put(
+    "/update-shop-avatar",
+    isSeller,
+    upload.single("image"),
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const seller = await Shop.findById(req.seller._id);
+            if (!seller) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Seller not found",
+                });
+            }
+            if (!req.file) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Please upload an avatar",
+                });
+            }
+
+            const existAvatarPath = `uploads/${seller.avatar}`;
+            fs.unlinkSync(existAvatarPath);
+
+            const fileUrl = path.join(req.file.filename);
+            const shop = await Shop.findByIdAndUpdate(
+                req.seller._id,
+                { avatar: fileUrl },
+                { new: true }
+            );
+
+            res.status(200).json({
+                success: true,
+                seller: shop,
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    }));
+
+// update shop information
+router.put(
+    "/update-shop-info",
+    isSeller,
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const { name, description, address, phoneNumber, zipCode } = req.body;
+
+            const shop = await Shop.findByIdAndUpdate(
+                req.seller._id,
+                { name, description, address, phoneNumber, zipCode },
+                { new: true }
+            );
+
+            res.status(200).json({
+                success: true,
+                shop,
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    })
+);
+
 module.exports = router;
