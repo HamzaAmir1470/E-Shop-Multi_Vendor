@@ -32,6 +32,10 @@ const orderSchema = new mongoose.Schema({
             type: String,
         },
     },
+    balanceTransferred: {
+        type: Boolean,
+        default: false,
+    },
     paidAt: {
         type: Date,
         default: Date.now(),

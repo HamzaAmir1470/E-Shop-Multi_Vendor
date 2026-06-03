@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import Store from './redux/store.js';
 import { loadSeller, loadUser } from './redux/actions/user.js';
 import ProtectedRoute from './Routes/ProtectedRoute.js';
-import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails, ShopRefundsPage, ShopAllRefunds, ShopSettingsPage } from './Routes/ShopRoutes.js';
+import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails, ShopRefundsPage, ShopAllRefunds, ShopSettingsPage, ShopWithdrawMoneyPage } from './Routes/ShopRoutes.js';
 import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
 import { getAllProducts } from './redux/actions/product.js';
 import { getAllEvents } from './redux/actions/event.js';
@@ -230,6 +230,15 @@ const App = () => {
             element={
               <SellerProtectedRoute>
                 <ShopAllCoupouns />
+              </SellerProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/dashboard-withdraw-money"
+            element={
+              <SellerProtectedRoute>
+                <ShopWithdrawMoneyPage />
               </SellerProtectedRoute>
             }
           />

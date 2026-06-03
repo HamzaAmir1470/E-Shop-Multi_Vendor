@@ -6,48 +6,69 @@ const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const { isAuthenticated } = require('../middlewares/auth');
 const Product = require('../model/product');
 const { isSeller } = require('../middlewares/auth');
+const Shop = require("../model/shop");
 
 // Create a new order
-router.post('/create-order', isAuthenticated, catchAsyncErrors(async (req, res, next) => {
-  try {
-    const { cart, shippingAddress, user, totalPrice, paymentInfo } = req.body;
+router.post(
+  "/create-order",
+  isAuthenticated,
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const { cart, shippingAddress, paymentInfo } = req.body;
 
-    // group cart items by shopid
-    const shopItemsMap = new Map();
-    for (const item of cart) {
-      const productId = item.product || item._id;
-      const product = await Product.findById(productId);
-      if (!product) {
-        return next(new ErrorHandler('Product not found', 404));
-      }
-      const shopId = product.shop._id;
-      if (!shopItemsMap.has(shopId)) {
-        shopItemsMap.set(shopId, []);
-      }
-      shopItemsMap.get(shopId).push(item);
-    }
+      // group cart items by shopId
+      const shopItemsMap = new Map();
 
-    // create separate order for each shop
-    const orders = [];
-    for (const [shopId, items] of shopItemsMap) {
-      const order = new Order({
-        cart: items,
-        shippingAddress,
-        user: req.user,
-        totalPrice,
-        paymentInfo,
+      for (const item of cart) {
+        const productId = item.product || item._id;
+
+        const product = await Product.findById(productId);
+        if (!product) {
+          return next(new ErrorHandler("Product not found", 404));
+        }
+
+        const shopId = product.shop._id.toString();
+
+        if (!shopItemsMap.has(shopId)) {
+          shopItemsMap.set(shopId, []);
+        }
+
+        shopItemsMap.get(shopId).push({
+          ...item,
+          price: item.price || product.discountPrice || product.originalPrice,
+        });
+      }
+
+      const orders = [];
+
+      // create separate order for each shop
+      for (const [shopId, items] of shopItemsMap) {
+        // ✅ calculate correct subtotal for this shop
+        const shopTotalPrice = items.reduce((acc, item) => {
+          return acc + Number(item.price) * Number(item.qty || item.quantity || 1);
+        }, 0);
+
+        const order = new Order({
+          cart: items,
+          shippingAddress,
+          user: req.user,
+          totalPrice: shopTotalPrice, // ✅ FIXED HERE
+          paymentInfo,
+        });
+
+        await order.save();
+        orders.push(order);
+      }
+
+      res.status(201).json({
+        success: true,
+        orders,
       });
-      await order.save();
-      orders.push(order);
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
     }
-    res.status(201).json({
-      success: true,
-      orders,
-    });
-  } catch (error) {
-    next(new ErrorHandler(error.message, 500));
-  }
-}));
+  })
+);
 
 // Get all orders of a user
 router.get(
@@ -118,8 +139,28 @@ router.put(
       if (nextStatus === "Delivered") {
         order.delieverAt = Date.now();
         order.deliveredAt = Date.now();
+
         if (order.paymentInfo) {
           order.paymentInfo.status = "succeeded";
+        }
+
+        // Prevent adding balance multiple times
+        if (!order.balanceTransferred) {
+          const shopId = order.cart?.[0]?.shopId;
+
+          if (shopId) {
+            const shop = await Shop.findById(shopId);
+
+            if (shop) {
+              const amountToAdd = Math.floor(Number(order.totalPrice) * 0.9);
+
+              shop.availableBalance += amountToAdd;
+
+              await shop.save({ validateBeforeSave: false });
+            }
+          }
+
+          order.balanceTransferred = true;
         }
       }
 
@@ -190,7 +231,28 @@ router.put(
       if (order.paymentInfo) {
         order.paymentInfo.status = "refunded";
       }
+      if (order.balanceTransferred) {
+        const shopId = order.cart?.[0]?.shopId;
 
+        if (shopId) {
+          const shop = await Shop.findById(shopId);
+
+          if (shop) {
+            const refundAmount = Math.floor(
+              Number(order.totalPrice) * 0.9
+            );
+
+            shop.availableBalance = Math.max(
+              0,
+              shop.availableBalance - refundAmount
+            );
+
+            await shop.save({ validateBeforeSave: false });
+          }
+        }
+
+        order.balanceTransferred = false;
+      }
       await order.save({ validateBeforeSave: false });
 
       return res.status(200).json({

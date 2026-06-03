@@ -18,8 +18,8 @@ const DashboardHero = ({ isMobile }) => {
     const { orders } = useSelector((state) => state.order);
     const { seller } = useSelector((state) => state.seller);
     const { products } = useSelector((state) => state.product);
-    const sellerId = seller?._id;
     const [expandedCard, setExpandedCard] = useState(null);
+    const sellerId = seller?._id;
 
     useEffect(() => {
         if (!sellerId) return;
@@ -27,17 +27,21 @@ const DashboardHero = ({ isMobile }) => {
         dispatch(getAllProductsShop(sellerId));
     }, [dispatch, sellerId]);
 
-    // const availableBalance = Number(seller?.availableBalance || 0).toFixed(2);
+    // Get available balance directly from seller Redux state
+    const availableBalance = seller?.availableBalance || 0;
     const totalOrders = orders?.length || 0;
     const totalProducts = products?.length || 0;
+
     const isRefundSuccess = (order) => {
         const status = (order?.Status || order?.status || "").toString().toLowerCase();
         const paymentStatus = (order?.paymentInfo?.status || "").toString().toLowerCase();
-        const anyItemRefunded = Array.isArray(order?.cart) && order.cart.some(it => (it?.refundStatus || "").toString().toLowerCase().includes('success'));
-        return paymentStatus === 'refunded' || /refund/.test(status) && /success/.test(status) || anyItemRefunded;
+        const anyItemRefunded = Array.isArray(order?.cart) && order.cart.some(it =>
+            (it?.refundStatus || "").toString().toLowerCase().includes('success')
+        );
+        return paymentStatus === 'refunded' ||
+            (/refund/.test(status) && /success/.test(status)) ||
+            anyItemRefunded;
     }
-
-
 
     const isDeliveredOrder = (order) => {
         const status = (order?.Status || order?.status || "").toString().toLowerCase();
@@ -56,12 +60,14 @@ const DashboardHero = ({ isMobile }) => {
     const pendingOrders = totalOrders - deliveredOrders;
     const completionRate = totalOrders ? (deliveredOrders / totalOrders) * 100 : 0;
 
-    const totalearningswithoutTax = deliveredOrdersList.reduce((acc, item) => {
+    // Calculate total earnings for display purposes only
+    const totalEarningsWithoutTax = deliveredOrdersList.reduce((acc, item) => {
         return acc + Number(item?.totalPrice || 0);
     }, 0);
 
-    const serviceCharge = totalearningswithoutTax * 0.1;
-    const availableBalance = Math.floor(totalearningswithoutTax - serviceCharge);
+    const serviceCharge = totalEarningsWithoutTax * 0.1;
+    const projectedEarnings = Math.floor(totalEarningsWithoutTax - serviceCharge);
+
     // Responsive columns for DataGrid
     const getColumns = () => {
         const baseColumns = [
@@ -88,7 +94,8 @@ const DashboardHero = ({ isMobile }) => {
                         "Processing": "bg-blue-100 text-blue-800",
                         "Shipped": "bg-purple-100 text-purple-800",
                         "Cancelled": "bg-red-100 text-red-800",
-                        "Pending": "bg-yellow-100 text-yellow-800"
+                        "Pending": "bg-yellow-100 text-yellow-800",
+                        "Refunded": "bg-orange-100 text-orange-800"
                     };
                     return (
                         <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>
@@ -223,7 +230,7 @@ const DashboardHero = ({ isMobile }) => {
         </motion.div>
     );
 
-    const MobileStatCard = ({ title, value, link, linkText, icon: Icon, color }) => (
+    const MobileStatCard = ({ title, value, link, linkText, icon: Icon, color, showSubtitle }) => (
         <div
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 cursor-pointer"
             onClick={() => setExpandedCard(expandedCard === title ? null : title)}
@@ -269,7 +276,7 @@ const DashboardHero = ({ isMobile }) => {
         <div className="w-full bg-gray-50 min-h-screen p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
             {/* Header */}
             <div className="mb-6 md:mb-8">
-                <h3 className="text-xl md:text-2xl font-bold text-gray-900">Overview</h3>
+                <h3 className="text-xl md:text-2xl font-bold text-gray-900">Dashboard Overview</h3>
                 <p className="text-sm md:text-base text-gray-500 mt-1">
                     Welcome back, {seller?.name || 'Seller'}!
                 </p>
@@ -281,11 +288,11 @@ const DashboardHero = ({ isMobile }) => {
                     <StatCard
                         index={0}
                         icon={TbCurrencyDollar}
-                        title="Account Balance"
-                        value={`$${availableBalance}`}
-                        subtitle="(after 10% fee)"
+                        title="Available Balance"
+                        value={`$${availableBalance.toFixed(2)}`}
+                        subtitle={availableBalance > 0 ? "ready to withdraw" : ""}
                         link="/dashboard-withdraw-money"
-                        linkText="Withdraw Money"
+                        linkText={availableBalance > 0 ? "Withdraw Money" : "Add Funds"}
                         color="bg-gradient-to-r from-green-400 to-green-600"
                     />
                     <StatCard
@@ -348,10 +355,10 @@ const DashboardHero = ({ isMobile }) => {
                 <div className="space-y-3 mb-6">
                     <MobileStatCard
                         icon={TbCurrencyDollar}
-                        title="Account Balance"
-                        value={`$${availableBalance}`}
+                        title="Available Balance"
+                        value={`$${availableBalance.toFixed(2)}`}
                         link="/dashboard-withdraw-money"
-                        linkText="Withdraw Money"
+                        linkText={availableBalance > 0 ? "Withdraw Money" : "Add Funds"}
                         color="bg-gradient-to-r from-green-400 to-green-600"
                     />
                     <MobileStatCard

@@ -35,7 +35,7 @@ const ShopInfo = ({ isOwner }) => {
   const { id } = useParams();
 
   useEffect(() => {
-    if (!id) return;   // 🚨 guard
+    if (!id) return;
 
     axios.get(`${server}/shop/get-shop-info/${id}`)
       .then((res) => {
@@ -47,6 +47,11 @@ const ShopInfo = ({ isOwner }) => {
 
   }, [id]);
 
+  const totalReviewsLength = products && products.reduce((total, product) => total + (product.reviews?.length || 0), 0);
+
+  const totalRatings = products && products.reduce((total, product) => total + (product.reviews?.reduce((sum, review) => sum + review.rating, 0) || 0), 0);
+
+  const averageRating = totalReviewsLength > 0 ? (totalRatings / totalReviewsLength).toFixed(1) : '0/5';
 
   const logoutHandler = async () => {
     await axios.get(`${server}/shop/logout`, { withCredentials: true });
@@ -81,8 +86,8 @@ const ShopInfo = ({ isOwner }) => {
           </h3>
           <div className="mt-2 flex items-center gap-1">
             <FiStar className="text-yellow-300 fill-yellow-300" size={14} />
-            <span className="text-white/90 font-medium">4.5</span>
-            <span className="text-white/70 text-sm">(120 reviews)</span>
+            <span className="text-white/90 font-medium">{averageRating}</span>
+            <span className="text-white/70 text-sm">({totalReviewsLength} reviews)</span>
           </div>
         </div>
       </div>
@@ -155,16 +160,30 @@ const ShopInfo = ({ isOwner }) => {
             </h5>
             <div className="flex items-center gap-2">
               <div className="flex">
-                {[1, 2, 3, 4].map((star) => (
+                {[1, 2, 3, 4, 5].map((star) => (
                   <FiStar
                     key={star}
-                    className="text-yellow-400 fill-yellow-400"
+                    className={`${star <= Math.floor(averageRating)
+                      ? "text-yellow-400 fill-yellow-400"
+                      : star === Math.ceil(averageRating) && averageRating % 1 !== 0
+                        ? "text-yellow-400 half-star"
+                        : "text-gray-300"
+                      }`}
                     size={18}
+                    style={
+                      star === Math.ceil(averageRating) && averageRating % 1 !== 0
+                        ? {
+                          position: 'relative',
+                          clipPath: 'inset(0 50% 0 0)'
+                        }
+                        : undefined
+                    }
                   />
                 ))}
-                <FiStar className="text-gray-300" size={18} />
               </div>
-              <span className="text-gray-600 font-medium">4/5</span>
+              <span className="text-gray-600 font-medium">
+                {(Number(averageRating) || 0).toFixed(1)}
+              </span>
             </div>
           </div>
         </div>
@@ -217,15 +236,15 @@ const ShopInfo = ({ isOwner }) => {
               <h5 className="font-semibold text-gray-700 mb-4 text-center">Shop Performance</h5>
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm hover:shadow transition-shadow">
-                  <p className="text-2xl font-bold text-blue-600">24</p>
+                  <p className="text-2xl font-bold text-blue-600">{data?.orders || '0'}</p>
                   <p className="text-xs text-gray-500 mt-1">Orders Today</p>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm hover:shadow transition-shadow">
-                  <p className="text-2xl font-bold text-green-600">98%</p>
-                  <p className="text-xs text-gray-500 mt-1">Positive</p>
+                  <p className="text-2xl font-bold text-green-600">{totalReviewsLength || '0'}</p>
+                  <p className="text-xs text-gray-500 mt-1">Positive Reviews</p>
                 </div>
                 <div className="text-center p-3 bg-white rounded-lg shadow-sm hover:shadow transition-shadow">
-                  <p className="text-2xl font-bold text-purple-600">2h</p>
+                  <p className="text-2xl font-bold text-purple-600">{data?.responseTime || '100'}%</p>
                   <p className="text-xs text-gray-500 mt-1">Response Time</p>
                 </div>
               </div>
