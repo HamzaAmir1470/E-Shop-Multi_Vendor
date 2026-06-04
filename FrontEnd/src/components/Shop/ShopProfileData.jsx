@@ -136,7 +136,7 @@ const ShopProfileData = ({ isOwner }) => {
                       <h1 className="font-semibold text-gray-800">{item.user?.name || item.name || "Anonymous"}</h1>
                       <p className="text-xs text-gray-500">{item.productName || "Product review"}</p>
                     </div>
-                    <Ratings rating={item.rating || item.ratings || 0} />
+                    <Ratings rating={item?.rating || 0} />
                   </div>
                   <p className="text-gray-600">{item?.comment || item?.review || "No comment provided."}</p>
                   <p className="text-gray-400 text-sm mt-1">

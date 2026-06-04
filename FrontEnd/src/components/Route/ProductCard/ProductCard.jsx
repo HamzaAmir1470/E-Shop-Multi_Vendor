@@ -7,7 +7,7 @@ import {
     AiOutlineShoppingCart,
     AiOutlineStar,
 } from "react-icons/ai";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import styles from "../../../styles/styles";
 import { useDispatch, useSelector } from "react-redux";
 import ProductDetailsCard from "../ProductDetailsCard/ProductDetailsCard.jsx";
@@ -93,7 +93,7 @@ const ProductCard = ({ data, isEvent }) => {
         <div className="w-full h-[370px] bg-white rounded-lg shadow-sm p-3 relative cursor-pointer group">
 
             {/* Product Image */}
-            <Link to={`/product/${data._id}`} onClick={(e) => e.stopPropagation()}>
+            <Link to={isEvent ? `/product/${data?._id}?isEvent=true` : `/product/${data._id}`} onClick={(e) => e.stopPropagation()}>
                 {data?.images?.length > 0 && (
                     <img
                         src={`${baseURL}/${data.images[0]}`}
@@ -111,7 +111,7 @@ const ProductCard = ({ data, isEvent }) => {
             </Link>
 
             {/* Product Name */}
-            <Link to={`/product/${data._id}`} onClick={(e) => e.stopPropagation()}>
+            <Link to={isEvent ? `/product/${data?._id}?isEvent=true` : `/product/${data?._id}`} onClick={(e) => e.stopPropagation()}>
                 <h4 className="pb-3 font-500">
                     {data?.name?.length > 40
                         ? data.name.slice(0, 40) + "..."
@@ -120,24 +120,26 @@ const ProductCard = ({ data, isEvent }) => {
             </Link>
 
             {/* Dynamic Rating */}
-            <div className="flex items-center gap-2">
-                <div className="relative inline-block" aria-hidden>
-                    <div className="flex text-gray-200">
-                        {[...Array(5)].map((_, i) => (
-                            <AiOutlineStar key={i} className="mr-1" color="#e5e7eb" size={18} />
-                        ))}
-                    </div>
-                    <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${Math.max(0, Math.min(5, ratingValue)) / 5 * 100}%` }}>
-                        <div className="flex">
+            <Link to={isEvent ? `/product/${data?._id}?isEvent=true` : `/product/${data._id}`} onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2">
+                    <div className="relative inline-block" aria-hidden>
+                        <div className="flex text-gray-200">
                             {[...Array(5)].map((_, i) => (
-                                <AiFillStar key={i} className="mr-1" color="#F6BA00" size={18} />
+                                <AiOutlineStar key={i} className="mr-1" color="#e5e7eb" size={18} />
                             ))}
                         </div>
+                        <div className="absolute top-0 left-0 overflow-hidden" style={{ width: `${Math.max(0, Math.min(5, ratingValue)) / 5 * 100}%` }}>
+                            <div className="flex">
+                                {[...Array(5)].map((_, i) => (
+                                    <AiFillStar key={i} className="mr-1" color="#F6BA00" size={18} />
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <span className="text-sm text-gray-600">{ratingValue > 0 ? `${ratingValue.toFixed(1)} (${data.reviews?.length || 0})` : 'No rating'}</span>
-            </div>
+                    <span className="text-sm text-gray-600">{ratingValue > 0 ? `${ratingValue.toFixed(1)} (${data.reviews?.length || 0})` : 'No rating'}</span>
+                </div>
+            </Link>
 
             {/* Price Section */}
             <div className="py-2 flex items-center justify-between">
@@ -212,7 +214,7 @@ const ProductCard = ({ data, isEvent }) => {
             </div>
 
             {open && <ProductDetailsCard setOpen={setOpen} data={data} />}
-        </div>
+        </div >
     );
 };
 
