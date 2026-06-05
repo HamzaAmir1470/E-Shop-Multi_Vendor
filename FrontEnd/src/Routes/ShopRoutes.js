@@ -12,7 +12,7 @@ import ShopRefundsPage from '../pages/Shop/ShopRefundsPage.jsx'
 import ShopAllRefunds from '../pages/Shop/ShopAllRefunds.jsx'
 import ShopSettingsPage from '../pages/Shop/ShopSettingsPage.jsx'
 import ShopWithdrawMoneyPage from '../pages/Shop/ShopWithdrawMoneyPage.jsx'
-
+import ShopInboxPage from '../pages/Shop/ShopInboxPage.jsx'
 export {
     ShopHomePage,
     ShopDashboardPage,
@@ -28,4 +28,5 @@ export {
     ShopAllRefunds,
     ShopSettingsPage,
     ShopWithdrawMoneyPage,
+    ShopInboxPage,
 }

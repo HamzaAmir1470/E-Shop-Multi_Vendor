@@ -41,6 +41,7 @@ const event = require('./controllers/event');
 const coupoun = require('./controllers/coupounCode');
 const payment = require('./controllers/payment');
 const order = require('./controllers/order');
+const conversation = require('./controllers/conversation');
 
 // Route Middlewares
 app.use('/api/v2/product', product);
@@ -50,6 +51,7 @@ app.use('/api/v2/event', event);
 app.use('/api/v2/coupoun', coupoun);
 app.use('/api/v2/payment', payment);
 app.use('/api/v2/order', order);
+app.use('/api/v2/conversation', conversation);
 
 // Error Handler
 app.use(ErrorHandler);

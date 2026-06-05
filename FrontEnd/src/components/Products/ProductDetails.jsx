@@ -98,6 +98,7 @@ const ProductDetails = ({ data }) => {
     const { wishlist } = useSelector((state) => state.wishlist)
     const { products } = useSelector((state) => state.product)
     const { cart } = useSelector((state) => state.cart)
+    const { user, isAuthenticated } = useSelector((state) => state.user)
     const [count, setCount] = useState(1)
     const [click, setClick] = useState(false)
     const [select, setSelect] = useState(0)
@@ -211,9 +212,28 @@ const ProductDetails = ({ data }) => {
         setCount((prev) => prev + 1)
     }
 
-    const handleMessageSubmit = (e) => {
+    const handleMessageSubmit = async (e) => {
         e?.stopPropagation()
-        navigate('/inbox?conversation-50?xsfdsfgdafjdkf')
+        if (isAuthenticated) {
+            const groupTitle = data._id + user._id;
+            const userId = user._id;
+            const sellerId = data.shop._id;
+
+            await axios.post(`${server}/conversation/create-new-conversation`, {
+                groupTitle,
+                userId,
+                sellerId
+            }).then((res) => {
+                if (res.data.success) {
+                    navigate(`/conversation/${res.data.conversation._id}`)
+                }
+            }).catch((error) => {
+                toast.error(error.response?.data?.message || 'Failed to create conversation')
+            })
+
+        } else {
+            navigate('/login')
+        }
     }
 
     if (!data) {
@@ -294,8 +314,8 @@ const ProductDetails = ({ data }) => {
                                 </Link>
 
                                 <div className="flex items-center gap-3">
-                                    <button onClick={handleMessageSubmit} className="flex items-center bg-white border border-indigo-200 text-indigo-600 px-4 py-2 rounded-lg hover:shadow-md transition-shadow font-medium">Message Seller <AiOutlineMessage className="ml-2 text-lg" /></button>
-                                    <Link to={`/shop/preview/${shop?._id}`} className="inline-block"><button className={`${styles.button} rounded-lg h-[42px] px-4`}>Visit Shop</button></Link>
+                                    <button onClick={handleMessageSubmit} className="flex items-center bg-gray border border-black-200 text-indigo-600 px-4 py-2 rounded-lg hover:shadow-md transition-shadow font-medium">Message Seller <AiOutlineMessage className="ml-2 text-lg" /></button>
+                                    <Link to={`/shop/preview/${shop?._id}`} className="inline-block"><button className={`${styles.button} rounded-lg h-[42px] px-4 text-white`}>Visit Shop</button></Link>
                                 </div>
                             </div>
                         </div>
