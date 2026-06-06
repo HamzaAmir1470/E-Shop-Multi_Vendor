@@ -223,9 +223,10 @@ const ProductDetails = ({ data }) => {
                 groupTitle,
                 userId,
                 sellerId
-            }).then((res) => {
+            },{withCredentials: true}).then((res) => {
+                console.log(res)
                 if (res.data.success) {
-                    navigate(`/conversation/${res.data.conversation._id}`)
+                    navigate(`/conversation/${res.data?.conversation._id}`)
                 }
             }).catch((error) => {
                 toast.error(error.response?.data?.message || 'Failed to create conversation')

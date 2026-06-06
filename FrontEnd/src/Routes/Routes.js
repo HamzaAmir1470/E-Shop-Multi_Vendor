@@ -20,6 +20,7 @@ import ResetPasswordPage from '../pages/ResetPasswordPage.jsx';
 import SellerResetPasswordPage from '../pages/SellerResetPasswordPage.jsx';
 import OrderDetailsPage from '../pages/OrderDetailsPage.jsx';
 import TrackOrderPage from '../pages/TrackOrderPage.jsx';
+import UserInbox from '../pages/UserInbox.jsx';
 
 export {
     LoginPage,
@@ -43,5 +44,6 @@ export {
     ResetPasswordPage,
     SellerResetPasswordPage,
     OrderDetailsPage,
-    TrackOrderPage
+    TrackOrderPage,
+    UserInbox
 };

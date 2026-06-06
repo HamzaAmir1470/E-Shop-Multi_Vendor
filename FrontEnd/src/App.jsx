@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom'
-import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage, ForgotPasswordPage, SellerForgotPasswordPage, ResetPasswordPage, SellerResetPasswordPage, OrderDetailsPage, TrackOrderPage } from './Routes/Routes.js'
+import { LoginPage, SignupPage, ActivationPage, HomePage, ProductPage, BestSellingPage, EventsPage, FAQPage, OrderSuccessPage, ProductDetailsPage, ProfilePage, Checkoutpage, Paymentpage, ShopCreatePage, SellerActivationPage, ShopLoginPage, ForgotPasswordPage, SellerForgotPasswordPage, ResetPasswordPage, SellerResetPasswordPage, OrderDetailsPage, TrackOrderPage, UserInbox } from './Routes/Routes.js'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useEffect } from 'react';
@@ -107,6 +107,16 @@ const App = () => {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/inbox"
+            element={
+              <ProtectedRoute>
+                <UserInbox />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/user/order/:id"
             element={
