@@ -50,7 +50,7 @@ router.get("/get-all-products-shop/:id", catchAsyncErrors(async (req, res, next)
 // GET ALL PRODUCTS (PUBLIC)
 router.get("/get-all-products", async (req, res, next) => {
     try {
-        const products = await Product.find();
+        const products = await Product.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
