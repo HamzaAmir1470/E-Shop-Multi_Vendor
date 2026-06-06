@@ -335,7 +335,7 @@ router.put(
             return next(new ErrorHandler(error.message, 500));
         }
     }));
-    
+
 // update user address
 router.put(
     "/update-user-address",
@@ -459,4 +459,24 @@ router.put(
         }
     })
 );
+
+// get user info by id
+router.get("/user-info/:id", catchAsyncErrors(async (req, res, next) => {
+    try {
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+        res.status(200).json({
+            success: true,
+            user,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
+
 module.exports = router;

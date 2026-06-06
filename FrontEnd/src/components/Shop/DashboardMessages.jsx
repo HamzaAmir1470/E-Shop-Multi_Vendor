@@ -1,7 +1,7 @@
 import React from 'react'
 import { useEffect } from 'react'
 import axios from 'axios'
-import { server } from '../../server'
+import { backend_url, server } from '../../server'
 import { useSelector } from 'react-redux'
 import { useNavigate } from 'react-router-dom'
 import { AiOutlineArrowRight, AiOutlineSend } from "react-icons/ai";
@@ -19,7 +19,10 @@ const DashboardMessages = () => {
     const [arrivalMessage, setArrivalMessage] = React.useState(null);
     const [messages, setMessages] = React.useState([]);
     const [currentChat, setCurrentChat] = React.useState(null);
+    const [userData, setUserData] = React.useState(null);
     const [newMessage, setNewMessage] = React.useState("");
+    const [onlineUsers, setOnlineUsers] = React.useState([]);
+    const [activeStatus, setActiveStatus] = React.useState(false);
 
     useEffect(() => {
         socketId.on("getMessage", (data) => {
@@ -44,6 +47,21 @@ const DashboardMessages = () => {
             })
     }, [seller._id])
 
+    useEffect(() => {
+        if (seller) {
+            const userId = seller._id;
+            socketId.emit("addUser", userId);
+            socketId.on("getUsers", (users) => {
+                setOnlineUsers(users);
+            });
+        }
+    }, [seller])
+
+    const onlineCheck = (chat) => {
+        const chatMembers = chat.members.find((member) => member !== seller._id);
+        const online = onlineUsers.find((user) => user.userId === chatMembers);
+        return online ? true : false;
+    }
 
     // get messages
     useEffect(() => {
@@ -74,7 +92,7 @@ const DashboardMessages = () => {
             conversationId: currentChat?._id,
             createdAt: Date.now(),
         };
-        const receiverId = currentChat?.members.find((member) => member.id !== seller._id);
+        const receiverId = currentChat?.members.find((member) => member !== seller._id);
         socketId.emit("sendMessage", {
             senderId: seller._id,
             receiverId,
@@ -131,6 +149,11 @@ const DashboardMessages = () => {
                                 index={index}
                                 setOpen={setOpen}
                                 setCurrentChat={setCurrentChat}
+                                me={seller._id}
+                                userData={userData}
+                                setUserData={setUserData}
+                                online={onlineCheck(item)}
+                                setActiveStatus={setActiveStatus}
                             />
                         ))
                     }
@@ -145,6 +168,8 @@ const DashboardMessages = () => {
                         sendMessageHandler={sendMessageHandler}
                         messages={messages}
                         sellerId={seller._id}
+                        userData={userData}
+                        activeStatus={activeStatus}
                     />
                 )
             }
@@ -153,48 +178,72 @@ const DashboardMessages = () => {
 }
 export default DashboardMessages;
 
-const MessageList = ({ data, index, setOpen, setCurrentChat }) => {
+const MessageList = ({ data, index, setOpen, setCurrentChat, me, userData, setUserData, online, setActiveStatus }) => {
     const navigate = useNavigate();
     const [active, setActive] = React.useState(false);
     const handleClick = (id) => {
         navigate(`?${id}`);
         setOpen(true);
     }
+
+    useEffect(() => {
+        setActiveStatus(online)
+        const userId = data.members.find((id) => id !== me);
+        const getUser = async () => {
+            try {
+                const res = await axios.get(`${server}/user/user-info/${userId}`);
+                setUserData(res.data.user);
+            } catch (error) {
+                console.log(error);
+            }
+        };
+        getUser();
+    }, [data._id, me])
+
     return (
         <div
             className={`w-full flex p-1 px-3 ${active ? 'bg-[#154b0a0c]' : 'bg-transparent'} cursor-pointer`}
             onClick={(e) => setActive(index) || handleClick(data._id) || setCurrentChat(data)}>
             <div className="relative">
                 <img
-                    src="http://localhost:8000//Profile%20%20pic-1780396120221-530810327.png"
-                    alt=""
-                    className="w-[50px] h-[50px] rounded-full"
+                    src={`${backend_url}${userData?.avatar?.url}`}
+                    alt={userData?.name || "User Avatar"}
+                    className="w-[50px] h-[50px] rounded-full object-cover border border-gray-200"
                 />
-                <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white">
-                </div>
+                {
+                    online ? (
+                        <div className="w-3 h-3 bg-green-500 rounded-full absolute bottom-0 right-0 border-2 border-white">
+                        </div>
+                    ) : (
+                        <div className="w-3 h-3 bg-gray-500 rounded-full absolute bottom-0 right-0 border-2 border-white">
+                        </div>
+                    )
+                }
             </div>
             <div className="pl-3">
-                <h1 className=" text-[18px] font-poppins">Sultan</h1>
-                <p className=" text-[16px] text-[#000c]">You: Yeah I am Good!</p>
+                <h1 className=" text-[18px] font-poppins">{userData ? userData.name : "User"}</h1>
+                <p className=" text-[16px] text-[#000c]">{
+                    data.lastMessageId !== userData?._id ? "You: " : userData.name.split(" ")[0] + ": "
+                } {data?.lastMessage}</p>
             </div>
         </div>
     )
 }
 
-const SellerInbox = ({ setOpen, newMessage, setNewMessage, sendMessageHandler, messages, sellerId }) => {
+const SellerInbox = ({ setOpen, newMessage, setNewMessage, sendMessageHandler, messages, sellerId, userData, activeStatus }) => {
     return (
         <div className="w-full min-h-full flex flex-col justify-between ">
             {/* message Header */}
             <div className="w-full flex p-3 items-center justify-between bg-slate-200">
                 <div className="flex">
                     <img
-                        src="http://localhost:8000//Profile%20%20pic-1780396120221-530810327.png"
-                        alt=""
-                        className="w-[60px] h-[60px] rounded-full "
+                        src={`${backend_url}${userData?.avatar?.url}`}
+                        alt={userData?.name || "User Avatar"}
+                        className="w-[60px] h-[60px] rounded-full object-cover border border-gray-200"
                     />
                     <div className="pl-3">
-                        <h1 className="text-[18px] font-poppins font-[600]">Sultan</h1>
-                        <p className="text-[14px] text-[#000c]">Active Now</p>
+                        <h1 className="text-[18px] font-poppins font-[600]">{userData?.name || "User"}</h1>
+                        <p className="text-[14px] text-[#000c]">{activeStatus ? "Active Now" : "Offline"}</p>
                     </div>
                 </div>
                 <AiOutlineArrowRight size={20} onClick={(e) => setOpen(false)} className="cursor-pointer" />
@@ -208,8 +257,8 @@ const SellerInbox = ({ setOpen, newMessage, setNewMessage, sendMessageHandler, m
                             {
                                 item.sender !== sellerId && (
                                     <img
-                                        src="http://localhost:8000//Profile%20%20pic-1780396120221-530810327.png"
-                                        alt=""
+                                        src={`${backend_url}${userData?.avatar?.url}`}
+                                        alt={userData?.name || "User Avatar"}
                                         className="w-[40px] h-[40px] rounded-full  mr-3"
                                     />
                                 )
