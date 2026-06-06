@@ -53,4 +53,24 @@ router.get('/get-all-conversation-seller/:sellerId', isSeller, catchAsyncErrors(
     }
 }));
 
+// update last message
+router.put('/update-last-message/:conversationId', catchAsyncErrors(async (req, res, next) => {
+    try {
+
+        const { lastMessage, lastMessageId } = req.body;
+
+        const conversation = await Conversation.findByIdAndUpdate(req.params.conversationId, {
+            lastMessage,
+            lastMessageId,
+        }, { new: true });
+
+        res.status(200).json({
+            success: true,
+            conversation,
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error.response.message, 500));
+    }
+}));
+
 module.exports = router;

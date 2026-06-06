@@ -3,9 +3,7 @@ const router = express.Router();
 const Messages = require('../model/messages');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const ErrorHandler = require('../utils/errorHandler');
-const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
+const { upload } = require("../multer")
 
 // Create a new message
 router.post('/create-new-message', upload.array('image'), catchAsyncErrors(async (req, res, next) => {
@@ -19,9 +17,11 @@ router.post('/create-new-message', upload.array('image'), catchAsyncErrors(async
         }
         messageData.conversationId = req.body.conversationId;
         messageData.sender = req.body.sender;
+        messageData.text = req.body.text;
 
         const message = new Messages({
             conversationId: messageData.conversationId,
+            text: messageData.text,
             sender: messageData.sender,
             images: messageData.images || []
         })
@@ -38,5 +38,23 @@ router.post('/create-new-message', upload.array('image'), catchAsyncErrors(async
     }
 }));
 
+
+// Get all messages with conversationId
+router.get('/get-all-messages/:conversationId', catchAsyncErrors(async (req, res, next) => {
+    try {
+        const conversationId = req.params.conversationId;
+
+        const messages = await Messages.find({
+            conversationId: conversationId
+        });
+
+        res.status(200).json({
+            success: true,
+            messages
+        });
+    } catch (error) {
+        return next(new ErrorHandler(error.message, 500));
+    }
+}));
 
 module.exports = router;

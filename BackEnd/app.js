@@ -42,7 +42,7 @@ const coupoun = require('./controllers/coupounCode');
 const payment = require('./controllers/payment');
 const order = require('./controllers/order');
 const conversation = require('./controllers/conversation');
-// const message = require('./controllers/message');
+const message = require('./controllers/message');
 
 // Route Middlewares
 app.use('/api/v2/product', product);
@@ -53,7 +53,7 @@ app.use('/api/v2/coupoun', coupoun);
 app.use('/api/v2/payment', payment);
 app.use('/api/v2/order', order);
 app.use('/api/v2/conversation', conversation);
-// app.use('/api/v2/message', message);
+app.use('/api/v2/message', message);
 
 // Error Handler
 app.use(ErrorHandler);
