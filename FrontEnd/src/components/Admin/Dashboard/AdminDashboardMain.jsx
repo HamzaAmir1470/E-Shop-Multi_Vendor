@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { AiOutlineArrowRight, AiOutlineMoneyCollect } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import { MdBorderClear } from "react-icons/md";
 import { useDispatch, useSelector } from "react-redux";
-import { getAllOrdersShop } from "../../../redux/actions/order";
+import { getAllOrdersAdmin } from "../../../redux/actions/order";
 import { getAllProductsShop } from "../../../redux/actions/product";
 import Button from "@mui/material/Button";
 import { DataGrid } from "@mui/x-data-grid";
@@ -12,64 +12,227 @@ import { FiPackage } from "react-icons/fi";
 import { TbCurrencyDollar } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaChevronDown } from "react-icons/fa";
+import axios from "axios";
+import { server } from "../../../server";
+import Loader from "../../Layout/Loader.jsx";
+import { getAllSellers } from "../../../redux/actions/sellers.js";
+
+// Constants
+const STATUS_STYLES = {
+    "Delivered": "bg-green-100 text-green-800",
+    "Processing": "bg-blue-100 text-blue-800",
+    "Shipped": "bg-purple-100 text-purple-800",
+    "Cancelled": "bg-red-100 text-red-800",
+    "Pending": "bg-yellow-100 text-yellow-800",
+    "Refunded": "bg-orange-100 text-orange-800"
+};
+
+const SERVICE_CHARGE_RATE = 0.1;
+
+// Utility functions
+const normalizeStatus = (status) => {
+    if (!status) return '';
+    const words = status.split(/\s+/);
+    const deduped = words.filter((w, i) => i === 0 || w !== words[i - 1]);
+    return deduped.join(' ');
+};
+
+const isRefundSuccess = (order) => {
+    const status = (order?.Status || order?.status || "").toString().toLowerCase();
+    const paymentStatus = (order?.paymentInfo?.status || "").toString().toLowerCase();
+    const anyItemRefunded = Array.isArray(order?.cart) && order.cart.some(it =>
+        (it?.refundStatus || "").toString().toLowerCase().includes('success')
+    );
+    return paymentStatus === 'refunded' ||
+        (/refund/.test(status) && /success/.test(status)) ||
+        anyItemRefunded;
+};
+
+const isDeliveredOrder = (order) => {
+    const status = (order?.Status || order?.status || "").toString().toLowerCase();
+    return status === 'delivered' || isRefundSuccess(order);
+};
+
+// Components
+const StatCard = ({ icon: Icon, title, value, subtitle, link, linkText, color, index, isMobile }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.1 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300"
+    >
+        <div className="p-4 md:p-6">
+            <div className="flex items-start justify-between">
+                <div className="flex-1">
+                    <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center mb-3 md:mb-4 ${color}`}>
+                        <Icon size={isMobile ? 20 : 24} className="text-white" />
+                    </div>
+                    <h3 className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        {title}
+                    </h3>
+                    <div className="flex items-baseline flex-wrap">
+                        <p className="text-xl md:text-2xl font-bold text-gray-900">{value}</p>
+                        {subtitle && (
+                            <span className="ml-2 text-xs md:text-sm text-gray-500">{subtitle}</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+            <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-100">
+                <Link to={link}>
+                    <span className="text-xs md:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors inline-flex items-center">
+                        {linkText}
+                        <svg className="ml-1 w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                    </span>
+                </Link>
+            </div>
+        </div>
+    </motion.div>
+);
+
+const MobileStatCard = ({ title, value, link, linkText, icon: Icon, color, isExpanded, onToggle }) => (
+    <div
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 cursor-pointer"
+        onClick={onToggle}
+    >
+        <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
+                    <Icon size={20} className="text-white" />
+                </div>
+                <div>
+                    <h3 className="text-sm font-medium text-gray-500">{title}</h3>
+                    <p className="text-xl font-bold text-gray-900">{value}</p>
+                </div>
+            </div>
+            <FaChevronDown className={`transform transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''} text-gray-400`} />
+        </div>
+        <AnimatePresence>
+            {isExpanded && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                >
+                    <div className="mt-4 pt-4 border-t border-gray-100">
+                        <Link to={link}>
+                            <span className="text-sm font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center">
+                                {linkText}
+                                <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                </svg>
+                            </span>
+                        </Link>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    </div>
+);
+
+const OrderStatusCard = ({ deliveredOrders, pendingOrders, completionRate }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 hover:shadow-lg transition-all duration-300"
+    >
+        <div className="flex items-center justify-between mb-3 md:mb-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center">
+                <MdBorderClear size={24} className="text-white" />
+            </div>
+        </div>
+        <h3 className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+            Order Status
+        </h3>
+        <div className="space-y-2 md:space-y-3 mt-2 md:mt-3">
+            <div className="flex justify-between items-center">
+                <span className="text-xs md:text-sm text-gray-600">Delivered</span>
+                <span className="font-semibold text-green-600 text-sm md:text-base">{deliveredOrders}</span>
+            </div>
+            <div className="flex justify-between items-center">
+                <span className="text-xs md:text-sm text-gray-600">Pending</span>
+                <span className="font-semibold text-orange-600 text-sm md:text-base">{pendingOrders}</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                <motion.div
+                    className="bg-green-500 h-2 rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${completionRate}%` }}
+                    transition={{ duration: 0.8, delay: 0.4 }}
+                />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">{completionRate.toFixed(0)}% completion rate</p>
+        </div>
+    </motion.div>
+);
 
 const AdminDashboardMain = ({ isMobile }) => {
     const dispatch = useDispatch();
-    const { orders } = useSelector((state) => state.order);
-    const { seller } = useSelector((state) => state.seller);
-    const { products } = useSelector((state) => state.product);
+    const { user } = useSelector((state) => state.user);
+    const {sellers} = useSelector((state) => state.seller);
+    const { isLoading } = useSelector((state) => state.order);
+    const [seller, setSeller] = useState(null);
+    const products = useSelector((state) => state.product.product);
     const [expandedCard, setExpandedCard] = useState(null);
-    const sellerId = seller?._id;
+    const [orders, setOrders] = useState([]);
 
+    // Fetch data
     useEffect(() => {
-        if (!sellerId) return;
-        dispatch(getAllOrdersShop(sellerId));
-        dispatch(getAllProductsShop(sellerId));
-    }, [dispatch, sellerId]);
+        if (user && user.role === 'admin') {
+            dispatch(getAllOrdersAdmin());
+            dispatch(getAllProductsShop());
+            dispatch(getAllSellers());
 
-    // Get available balance directly from seller Redux state
-    const availableBalance = seller?.availableBalance || 0;
+            axios.get(`${server}/order/admin-all-orders`, { withCredentials: true })
+                .then(res => setOrders(res.data.orders))
+                .catch(err => console.error("Failed to fetch orders:", err));
+            axios.get(`${server}/shop/admin-all-sellers`, { withCredentials: true })
+                .then(res => setSeller(res.data.sellers))
+                .catch(err => console.error("Failed to fetch sellers:", err));
+        }
+    }, [dispatch, user]);
+
+    // Computed values
     const totalOrders = orders?.length || 0;
     const totalProducts = products?.length || 0;
+    const totalSellers = sellers?.length || 0;
+    const totalEarnings = 0; 
 
-    const isRefundSuccess = (order) => {
-        const status = (order?.Status || order?.status || "").toString().toLowerCase();
-        const paymentStatus = (order?.paymentInfo?.status || "").toString().toLowerCase();
-        const anyItemRefunded = Array.isArray(order?.cart) && order.cart.some(it =>
-            (it?.refundStatus || "").toString().toLowerCase().includes('success')
-        );
-        return paymentStatus === 'refunded' ||
-            (/refund/.test(status) && /success/.test(status)) ||
-            anyItemRefunded;
-    }
+    const deliveredOrdersList = useMemo(
+        () => orders?.filter(order => isDeliveredOrder(order)) || [],
+        [orders]
+    );
 
-    const isDeliveredOrder = (order) => {
-        const status = (order?.Status || order?.status || "").toString().toLowerCase();
-        return status === 'delivered' || isRefundSuccess(order);
-    }
-
-    const normalizeStatus = (status) => {
-        if (!status) return '';
-        const words = status.split(/\s+/);
-        const deduped = words.filter((w, i) => i === 0 || w !== words[i - 1]);
-        return deduped.join(' ');
-    }
-
-    const deliveredOrdersList = orders?.filter(order => isDeliveredOrder(order)) || [];
-    const deliveredOrders = deliveredOrdersList.length || 0;
+    const deliveredOrders = deliveredOrdersList.length;
     const pendingOrders = totalOrders - deliveredOrders;
     const completionRate = totalOrders ? (deliveredOrders / totalOrders) * 100 : 0;
 
-    // Calculate total earnings for display purposes only
-    const totalEarningsWithoutTax = deliveredOrdersList.reduce((acc, item) => {
-        return acc + Number(item?.totalPrice || 0);
-    }, 0);
+    const totalEarningsWithoutTax = useMemo(
+        () => deliveredOrdersList.reduce((acc, item) => acc + Number(item?.totalPrice || 0), 0),
+        [deliveredOrdersList]
+    );
 
-    const serviceCharge = totalEarningsWithoutTax * 0.1;
-    const projectedEarnings = Math.floor(totalEarningsWithoutTax - serviceCharge);
+    const projectedEarnings = Math.floor(totalEarningsWithoutTax * (1 - SERVICE_CHARGE_RATE));
 
-    // Responsive columns for DataGrid
-    const getColumns = () => {
+    // Data grid rows
+    const rows = useMemo(() =>
+        orders?.map((item) => ({
+            id: item._id,
+            itemsQty: item.cart.reduce((acc, item) => acc + item.qty, 0),
+            total: `US$ ${item.totalPrice.toFixed(2)}`,
+            status: normalizeStatus(item.Status || item.status || (item.paymentInfo?.status === 'refunded' ? 'Refunded' : '')),
+            date: new Date(item.createdAt).toLocaleDateString(),
+        })) || [],
+        [orders]
+    );
+
+    // Table columns configuration
+    const getColumns = useCallback(() => {
         const baseColumns = [
             {
                 field: "id",
@@ -87,22 +250,11 @@ const AdminDashboardMain = ({ isMobile }) => {
                 headerName: "Status",
                 minWidth: isMobile ? 100 : 130,
                 flex: 0.6,
-                renderCell: (params) => {
-                    const status = params.value;
-                    const statusStyles = {
-                        "Delivered": "bg-green-100 text-green-800",
-                        "Processing": "bg-blue-100 text-blue-800",
-                        "Shipped": "bg-purple-100 text-purple-800",
-                        "Cancelled": "bg-red-100 text-red-800",
-                        "Pending": "bg-yellow-100 text-yellow-800",
-                        "Refunded": "bg-orange-100 text-orange-800"
-                    };
-                    return (
-                        <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${statusStyles[status] || "bg-gray-100 text-gray-800"}`}>
-                            {isMobile && status === "Delivered" ? "Del" : status}
-                        </span>
-                    );
-                },
+                renderCell: (params) => (
+                    <span className={`px-2 md:px-3 py-1 rounded-full text-xs font-medium ${STATUS_STYLES[params.value] || "bg-gray-100 text-gray-800"}`}>
+                        {isMobile && params.value === "Delivered" ? "Del" : params.value}
+                    </span>
+                ),
             },
             {
                 field: "itemsQty",
@@ -166,9 +318,6 @@ const AdminDashboardMain = ({ isMobile }) => {
                                 transform: 'translateY(-2px)',
                                 boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
                             },
-                            '&:active': {
-                                transform: 'translateY(0px)',
-                            }
                         }}
                         endIcon={!isMobile && <AiOutlineArrowRight size={14} />}
                     >
@@ -179,98 +328,15 @@ const AdminDashboardMain = ({ isMobile }) => {
         });
 
         return baseColumns;
-    };
+    }, [isMobile]);
 
-    const row = [];
-    orders && orders.slice(0, isMobile ? 5 : 10).forEach((item) => {
-        row.push({
-            id: item._id,
-            itemsQty: item.cart.reduce((acc, item) => acc + item.qty, 0),
-            total: "US$ " + item.totalPrice.toFixed(2),
-            status: normalizeStatus((item.Status || item.status || (item.paymentInfo?.status === 'refunded' ? 'Refunded' : ''))),
-            date: new Date(item.createdAt).toLocaleDateString(),
-        });
-    });
+    const toggleExpandedCard = useCallback((title) => {
+        setExpandedCard(prev => prev === title ? null : title);
+    }, []);
 
-    const StatCard = ({ icon: Icon, title, value, subtitle, link, linkText, color, index }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300"
-        >
-            <div className="p-4 md:p-6">
-                <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                        <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center mb-3 md:mb-4 ${color}`}>
-                            <Icon size={isMobile ? 20 : 24} className="text-white" />
-                        </div>
-                        <h3 className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                            {title}
-                        </h3>
-                        <div className="flex items-baseline flex-wrap">
-                            <p className="text-xl md:text-2xl font-bold text-gray-900">{value}</p>
-                            {subtitle && (
-                                <span className="ml-2 text-xs md:text-sm text-gray-500">{subtitle}</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                <div className="mt-3 md:mt-4 pt-3 md:pt-4 border-t border-gray-100">
-                    <Link to={link}>
-                        <span className="text-xs md:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors inline-flex items-center">
-                            {linkText}
-                            <svg className="ml-1 w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                            </svg>
-                        </span>
-                    </Link>
-                </div>
-            </div>
-        </motion.div>
-    );
-
-    const MobileStatCard = ({ title, value, link, linkText, icon: Icon, color, showSubtitle }) => (
-        <div
-            className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 cursor-pointer"
-            onClick={() => setExpandedCard(expandedCard === title ? null : title)}
-        >
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${color}`}>
-                        <Icon size={20} className="text-white" />
-                    </div>
-                    <div>
-                        <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-                        <p className="text-xl font-bold text-gray-900">{value}</p>
-                    </div>
-                </div>
-                <FaChevronDown className={`transform transition-transform duration-300 ${expandedCard === title ? 'rotate-180' : ''} text-gray-400`} />
-            </div>
-            <AnimatePresence>
-                {expandedCard === title && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="mt-4 pt-4 border-t border-gray-100">
-                            <Link to={link}>
-                                <span className="text-sm font-medium text-indigo-600 hover:text-indigo-700 inline-flex items-center">
-                                    {linkText}
-                                    <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
-                                </span>
-                            </Link>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
+    if (isLoading) {
+        return <Loader />;
+    }
 
     return (
         <div className="w-full bg-gray-50 min-h-screen p-4 md:p-6 lg:p-8 pb-20 md:pb-8">
@@ -278,22 +344,23 @@ const AdminDashboardMain = ({ isMobile }) => {
             <div className="mb-6 md:mb-8">
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900">Overview</h3>
                 <p className="text-sm md:text-base text-gray-500 mt-1">
-                    Welcome back, {seller?.name || 'Seller'}!
+                    Welcome back, {user?.name || 'Admin'}!
                 </p>
             </div>
 
-            {/* Stats Grid - Responsive layout */}
+            {/* Stats Grid */}
             {!isMobile ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
                     <StatCard
                         index={0}
                         icon={TbCurrencyDollar}
                         title="Total Earnings"
-                        value={`$${availableBalance.toFixed(2)}`}
-                        subtitle={availableBalance > 0 ? "ready to withdraw" : ""}
+                        value={`$${totalEarnings.toFixed(2)}`}
+                        subtitle={totalEarnings > 0 ? "ready to withdraw" : ""}
                         link="/admin-withdraw-money"
-                        linkText={availableBalance > 0 ? "Withdraw Money" : "Add Funds"}
+                        linkText={totalEarnings > 0 ? "Withdraw Money" : "Add Funds"}
                         color="bg-gradient-to-r from-green-400 to-green-600"
+                        isMobile={isMobile}
                     />
                     <StatCard
                         index={1}
@@ -304,54 +371,26 @@ const AdminDashboardMain = ({ isMobile }) => {
                         link="/admin-orders"
                         linkText="View All Orders"
                         color="bg-gradient-to-r from-blue-400 to-blue-600"
+                        isMobile={isMobile}
                     />
                     <StatCard
                         index={2}
                         icon={FiPackage}
                         title="Total Sellers"
-                        value={totalProducts}
+                        value={totalSellers}
                         subtitle="active sellers"
                         link="/admin-sellers"
                         linkText="Manage Sellers"
                         color="bg-gradient-to-r from-purple-400 to-purple-600"
+                        isMobile={isMobile}
                     />
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.3 }}
-                        className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 hover:shadow-lg transition-all duration-300"
-                    >
-                        <div className="flex items-center justify-between mb-3 md:mb-4">
-                            <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-gradient-to-r from-orange-400 to-orange-600 flex items-center justify-center">
-                                <MdBorderClear size={isMobile ? 20 : 24} className="text-white" />
-                            </div>
-                        </div>
-                        <h3 className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
-                            Order Status
-                        </h3>
-                        <div className="space-y-2 md:space-y-3 mt-2 md:mt-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs md:text-sm text-gray-600">Delivered</span>
-                                <span className="font-semibold text-green-600 text-sm md:text-base">{deliveredOrders}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-xs md:text-sm text-gray-600">Pending</span>
-                                <span className="font-semibold text-orange-600 text-sm md:text-base">{pendingOrders}</span>
-                            </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                                <motion.div
-                                    className="bg-green-500 h-2 rounded-full"
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${completionRate}%` }}
-                                    transition={{ duration: 0.8, delay: 0.4 }}
-                                />
-                            </div>
-                            <p className="text-xs text-gray-500 mt-1">{completionRate.toFixed(0)}% completion rate</p>
-                        </div>
-                    </motion.div>
+                    <OrderStatusCard
+                        deliveredOrders={deliveredOrders}
+                        pendingOrders={pendingOrders}
+                        completionRate={completionRate}
+                    />
                 </div>
             ) : (
-                // Mobile Stats Cards
                 <div className="space-y-3 mb-6">
                     <MobileStatCard
                         icon={TbCurrencyDollar}
@@ -360,6 +399,8 @@ const AdminDashboardMain = ({ isMobile }) => {
                         link="/admin-withdraw-money"
                         linkText={totalEarnings > 0 ? "Withdraw Money" : "Add Funds"}
                         color="bg-gradient-to-r from-green-400 to-green-600"
+                        isExpanded={expandedCard === "Total Earnings"}
+                        onToggle={() => toggleExpandedCard("Total Earnings")}
                     />
                     <MobileStatCard
                         icon={HiOutlineShoppingBag}
@@ -368,6 +409,8 @@ const AdminDashboardMain = ({ isMobile }) => {
                         link="/admin-orders"
                         linkText="View All Orders"
                         color="bg-gradient-to-r from-blue-400 to-blue-600"
+                        isExpanded={expandedCard === "Total Orders"}
+                        onToggle={() => toggleExpandedCard("Total Orders")}
                     />
                     <MobileStatCard
                         icon={FiPackage}
@@ -376,6 +419,8 @@ const AdminDashboardMain = ({ isMobile }) => {
                         link="/admin-sellers"
                         linkText="Manage Sellers"
                         color="bg-gradient-to-r from-purple-400 to-purple-600"
+                        isExpanded={expandedCard === "Total Sellers"}
+                        onToggle={() => toggleExpandedCard("Total Sellers")}
                     />
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                         <div className="flex items-center space-x-3 mb-3">
@@ -414,9 +459,7 @@ const AdminDashboardMain = ({ isMobile }) => {
                                 color: "#667eea",
                                 fontWeight: 500,
                                 fontSize: isMobile ? '0.75rem' : '0.875rem',
-                                '&:hover': {
-                                    backgroundColor: "#f7fafc"
-                                }
+                                '&:hover': { backgroundColor: "#f7fafc" }
                             }}
                         >
                             View All Orders
@@ -424,123 +467,117 @@ const AdminDashboardMain = ({ isMobile }) => {
                         </Button>
                     </Link>
                 </div>
+
                 <div className="w-full overflow-x-auto">
-                    <div>
-                        {!isMobile ? (
-                            <div style={{ height: 450, width: '100%' }}>
-                                <DataGrid
-                                    rows={row}
-                                    columns={getColumns()}
-                                    pageSize={10}
-                                    rowsPerPageOptions={[10, 25, 50]}
-                                    disableSelectionOnClick
-                                    density="standard"
-                                    sx={{
-                                        border: 'none',
-                                        '& .MuiDataGrid-cell': {
-                                            borderBottom: '1px solid #f3f4f6',
-                                            fontSize: '0.875rem',
-                                            padding: '8px 16px',
-                                        },
-                                        '& .MuiDataGrid-columnHeaders': {
-                                            backgroundColor: '#f9fafb',
-                                            borderBottom: '1px solid #e5e7eb',
-                                            color: '#374151',
-                                            fontWeight: 600,
-                                            fontSize: '0.875rem',
-                                            minHeight: '56px !important',
-                                        },
-                                        '& .MuiDataGrid-footerContainer': {
-                                            borderTop: '1px solid #e5e7eb',
-                                            minHeight: '52px',
-                                        },
-                                        '& .MuiDataGrid-row': {
-                                            minHeight: '52px !important',
-                                        },
-                                    }}
-                                />
+                    {orders.length === 0 ? (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-center py-8 md:py-12"
+                        >
+                            <div className="text-gray-400 mb-4">
+                                <HiOutlineShoppingBag size={isMobile ? 48 : 64} className="mx-auto" />
                             </div>
-                        ) : (
-                            <div className="p-3 space-y-3">
-                                {row && row.length > 0 ? (
-                                    row.map((r) => (
-                                        <motion.div
-                                            key={r.id}
-                                            initial={{ opacity: 0, y: 8 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ duration: 0.18 }}
-                                            className="bg-white border border-gray-100 rounded-lg shadow-sm p-3 flex items-center justify-between"
-                                        >
-                                            <div className="flex items-start space-x-3">
-                                                <div className="flex-shrink-0">
-                                                    <div className="w-10 h-10 rounded-md bg-gray-50 flex items-center justify-center text-gray-600">
-                                                        <HiOutlineShoppingBag size={18} />
-                                                    </div>
+                            <p className="text-gray-500 text-sm md:text-base">No orders yet</p>
+                            <p className="text-gray-400 text-xs md:text-sm mt-1">When you receive orders, they will appear here</p>
+                        </motion.div>
+                    ) : !isMobile ? (
+                        <div style={{ height: 'auto', width: '100%' }}>
+                            <DataGrid
+                                rows={rows}
+                                columns={getColumns()}
+                                initialState={{
+                                    pagination: { paginationModel: { pageSize: 4, page: 0 } },
+                                }}
+                                pageSizeOptions={[4, 10, 25, 50]}
+                                disableSelectionOnClick
+                                density="standard"
+                                sx={{
+                                    border: 'none',
+                                    '& .MuiDataGrid-cell': {
+                                        borderBottom: '1px solid #f3f4f6',
+                                        fontSize: '0.875rem',
+                                        padding: '8px 16px',
+                                    },
+                                    '& .MuiDataGrid-columnHeaders': {
+                                        backgroundColor: '#f9fafb',
+                                        borderBottom: '1px solid #e5e7eb',
+                                        color: '#374151',
+                                        fontWeight: 600,
+                                        fontSize: '0.875rem',
+                                        minHeight: '48px !important',
+                                    },
+                                    '& .MuiDataGrid-footerContainer': {
+                                        borderTop: '1px solid #e5e7eb',
+                                        minHeight: '48px',
+                                    },
+                                    '& .MuiDataGrid-row': {
+                                        minHeight: '48px !important',
+                                    },
+                                }}
+                            />
+                        </div>
+                    ) : (
+                        <div className="p-3 space-y-3">
+                            {rows.map((row) => (
+                                <motion.div
+                                    key={row.id}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.18 }}
+                                    className="bg-white border border-gray-100 rounded-lg shadow-sm p-3 flex items-center justify-between"
+                                >
+                                    <div className="flex items-start space-x-3">
+                                        <div className="flex-shrink-0">
+                                            <div className="w-10 h-10 rounded-md bg-gray-50 flex items-center justify-center text-gray-600">
+                                                <HiOutlineShoppingBag size={18} />
+                                            </div>
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div className="flex items-center justify-between">
+                                                <div className="truncate">
+                                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                                        Order #{String(row.id).slice(-6)}
+                                                    </p>
+                                                    <p className="text-xs text-gray-500 mt-0.5">{row.date}</p>
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="truncate">
-                                                            <p className="text-sm font-medium text-gray-900 truncate">Order {`#${String(r.id).slice(-6)}`}</p>
-                                                            <p className="text-xs text-gray-500 mt-0.5">{r.date}</p>
-                                                        </div>
-                                                        <div className="ml-3 text-right">
-                                                            <p className="text-sm font-semibold text-gray-900">{r.total}</p>
-                                                            <p className="text-xs text-gray-500">{r.itemsQty} items</p>
-                                                        </div>
-                                                    </div>
-                                                    <div className="mt-2 flex items-center space-x-2">
-                                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${r.status === 'Delivered' ? 'bg-green-100 text-green-800' :
-                                                            r.status === 'Processing' ? 'bg-blue-100 text-blue-800' :
-                                                                r.status === 'Shipped' ? 'bg-purple-100 text-purple-800' :
-                                                                    r.status === 'Cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                                                            }`}>{r.status}</span>
-                                                    </div>
+                                                <div className="ml-3 text-right">
+                                                    <p className="text-sm font-semibold text-gray-900">{row.total}</p>
+                                                    <p className="text-xs text-gray-500">{row.itemsQty} items</p>
                                                 </div>
                                             </div>
-                                            <div className="ml-3 flex-shrink-0">
-                                                <Link to={`/order/${r.id}`} aria-label={`View order ${r.id}`}>
-                                                    <Button
-                                                        variant="outlined"
-                                                        size="small"
-                                                        sx={{
-                                                            textTransform: 'none',
-                                                            borderRadius: '8px',
-                                                            borderColor: '#e2e8f0',
-                                                            color: '#4a5568',
-                                                            minWidth: '64px',
-                                                            padding: '6px 10px',
-                                                            fontSize: '0.75rem',
-                                                        }}
-                                                    >
-                                                        View
-                                                    </Button>
-                                                </Link>
+                                            <div className="mt-2 flex items-center space-x-2">
+                                                <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_STYLES[row.status] || "bg-gray-100 text-gray-800"}`}>
+                                                    {row.status}
+                                                </span>
                                             </div>
-                                        </motion.div>
-                                    ))
-                                ) : (
-                                    <div className="text-center py-6 text-sm text-gray-500">No recent orders</div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+                                        </div>
+                                    </div>
+                                    <div className="ml-3 flex-shrink-0">
+                                        <Link to={`/order/${row.id}`} aria-label={`View order ${row.id}`}>
+                                            <Button
+                                                variant="outlined"
+                                                size="small"
+                                                sx={{
+                                                    textTransform: 'none',
+                                                    borderRadius: '8px',
+                                                    borderColor: '#e2e8f0',
+                                                    color: '#4a5568',
+                                                    minWidth: '64px',
+                                                    padding: '6px 10px',
+                                                    fontSize: '0.75rem',
+                                                }}
+                                            >
+                                                View
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
-
-            {/* Empty state for no orders */}
-            {orders && orders.length === 0 && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="text-center py-8 md:py-12"
-                >
-                    <div className="text-gray-400 mb-4">
-                        <HiOutlineShoppingBag size={isMobile ? 48 : 64} className="mx-auto" />
-                    </div>
-                    <p className="text-gray-500 text-sm md:text-base">No orders yet</p>
-                    <p className="text-gray-400 text-xs md:text-sm mt-1">When you receive orders, they will appear here</p>
-                </motion.div>
-            )}
         </div>
     );
 };

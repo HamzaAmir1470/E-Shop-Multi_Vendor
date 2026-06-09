@@ -5,7 +5,7 @@ const ErrorHandler = require('../utils/ErrorHandler');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const { isAuthenticated } = require('../middlewares/auth');
 const Product = require('../model/product');
-const { isSeller } = require('../middlewares/auth');
+const { isSeller, isAdmin } = require('../middlewares/auth');
 const Shop = require("../model/shop");
 
 // Create a new order
@@ -398,6 +398,27 @@ router.put(
           ? "Item refund request submitted successfully"
           : "Refund request updated successfully",
       })
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
+// all orders -- admin
+router.get(
+  "/admin-all-orders",
+  isAuthenticated,
+  isAdmin("admin"),
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const orders = await Order.find().sort({
+        deliveredAt: -1, createdAt: -1
+      });
+
+      res.status(200).json({
+        success: true,
+        orders,
+      });
     } catch (error) {
       return next(new ErrorHandler(error.message, 500));
     }
