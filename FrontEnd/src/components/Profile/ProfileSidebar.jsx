@@ -2,7 +2,7 @@
 import { AiOutlineCreditCard, AiOutlineMessage, AiOutlineLogin } from 'react-icons/ai';
 import { HiOutlineReceiptRefund, HiOutlineShoppingBag } from 'react-icons/hi';
 import { RxPerson } from 'react-icons/rx';
-import { MdOutlineTrackChanges } from 'react-icons/md';
+import { MdOutlineAdminPanelSettings, MdOutlineTrackChanges } from 'react-icons/md';
 import { RiLockPasswordLine } from 'react-icons/ri';
 import { TbAddressBook } from "react-icons/tb";
 import { useNavigate } from 'react-router-dom'
@@ -30,7 +30,6 @@ const ProfileSidebar = ({ setActive, active }) => {
                 toast.error(err.response.data.message);
             });
     };
-
     const menuItems = [
         { id: 1, label: "Profile", icon: RxPerson },
         { id: 2, label: "Orders", icon: HiOutlineShoppingBag },
@@ -39,20 +38,31 @@ const ProfileSidebar = ({ setActive, active }) => {
             id: 4,
             label: "Inbox",
             icon: AiOutlineMessage,
-            action: () => navigate("/inbox")
+            action: () => navigate("/inbox"),
         },
         { id: 5, label: "Track Order", icon: MdOutlineTrackChanges },
         { id: 6, label: "Change Password", icon: RiLockPasswordLine },
         { id: 7, label: "Address", icon: TbAddressBook },
+
+        ...(user?.role === "admin"
+            ? [
+                {
+                    id: 8,
+                    label: "Admin Dashboard",
+                    icon: MdOutlineAdminPanelSettings,
+                    action: () => navigate("/admin/dashboard"),
+                },
+            ]
+            : []),
+
         {
-            id: 8,
+            id: 9,
             label: "Log Out",
             icon: AiOutlineLogin,
             action: logoutHandler,
-            isLogout: true
+            isLogout: true,
         },
     ];
-
     const handleItemClick = (item) => {
         if (item.action) {
             item.action();

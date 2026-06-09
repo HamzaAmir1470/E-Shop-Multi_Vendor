@@ -8,12 +8,13 @@ import Store from './redux/store.js';
 import { loadSeller, loadUser } from './redux/actions/user.js';
 import ProtectedRoute from './Routes/ProtectedRoute.js';
 import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails, ShopRefundsPage, ShopAllRefunds, ShopSettingsPage, ShopWithdrawMoneyPage, ShopInboxPage } from './Routes/ShopRoutes.js';
-import {AdminDashboardPage} from './Routes/AdminDashboard.js'
+import { AdminDashboardPage } from './Routes/AdminRoutes.js'
 import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
 import { getAllProducts } from './redux/actions/product.js';
 import { getAllEvents } from './redux/actions/event.js';
 import { server } from './server.js';
 import axios from 'axios';
+import ProtectedAdminRoute from './Routes/ProtectedAdminRoute.js';
 import { Elements } from "@stripe/react-stripe-js"
 import { loadStripe } from "@stripe/stripe-js"
 
@@ -264,7 +265,9 @@ const App = () => {
           <Route
             path="/admin/dashboard"
             element={
-              <AdminDashboardPage />
+              <ProtectedAdminRoute>
+                <AdminDashboardPage />
+              </ProtectedAdminRoute>
             }
           />
         </Routes>

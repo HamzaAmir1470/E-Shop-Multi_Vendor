@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AiOutlineGift, AiOutlineClose } from "react-icons/ai";
 import { MdOutlineLocalOffer } from "react-icons/md";
 import { FiShoppingBag, FiPackage } from "react-icons/fi";
@@ -13,7 +13,7 @@ const AdminHeader = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     if (!user) return null;
-
+    const navigate = useNavigate();
     // const getAvatarUrl = () => {
     //     if (!user?.avatar) return "/default-avatar.png";
 
@@ -168,6 +168,9 @@ const AdminHeader = () => {
                                 src={user?.avatar?.url ? `${backend_url}${user?.avatar?.url}` : "/default-avatar.png"}
                                 alt={user.name || "User Avatar"}
                                 className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-gray-200 hover:border-green-400 transition-colors duration-200"
+                                onClick={() => {
+                                    navigate('/profile')
+                                }}
                                 onError={(e) => {
                                     e.target.src = "/default-avatar.png";
                                 }}
