@@ -73,7 +73,7 @@ const ShopDashboardPage = () => {
                 )}
 
                 {/* Main Content */}
-                <div className={`
+               <div className={`
                     flex-1 transition-all duration-300
                     ${isMobile ? 'w-full' : 'ml-0'}
                     mt-0
