@@ -43,6 +43,7 @@ const payment = require('./controllers/payment');
 const order = require('./controllers/order');
 const conversation = require('./controllers/conversation');
 const message = require('./controllers/message');
+const withdraw = require('./controllers/withdraw');
 
 // Route Middlewares
 app.use('/api/v2/product', product);
@@ -54,6 +55,7 @@ app.use('/api/v2/payment', payment);
 app.use('/api/v2/order', order);
 app.use('/api/v2/conversation', conversation);
 app.use('/api/v2/message', message);
+app.use('/api/v2/withdraw', withdraw);
 
 // Error Handler
 app.use(ErrorHandler);

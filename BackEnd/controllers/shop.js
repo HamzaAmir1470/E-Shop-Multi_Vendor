@@ -417,6 +417,55 @@ router.delete(
     })
 );
 
+// update payment methods
+router.put(
+    "/update-payment-methods",
+    isSeller,
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const { withdrawMethod } = req.body;
+
+            const shop = await Shop.findByIdAndUpdate(
+                req.seller._id,
+                { withdrawMethod },
+                { new: true }
+            );
+
+            res.status(200).json({
+                success: true,
+                shop,
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    })
+);
+
+// delete payment methods
+
+router.delete(
+    "/delete-withdraw-method",
+    isSeller,
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const shop = await Shop.findById(req.seller._id);
+            if (!shop) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Shop not found",
+                });
+            }
+            shop.withdrawMethod = null;
+            await shop.save();
+            res.status(200).json({
+                success: true,
+                shop,
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    })
+);
 
 
 module.exports = router;

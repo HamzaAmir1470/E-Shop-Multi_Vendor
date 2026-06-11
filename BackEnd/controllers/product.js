@@ -4,7 +4,7 @@ const Product = require('../model/product.js')
 const { upload } = require("../multer.js")
 const catchAsyncErrors = require("../middlewares/catchAsyncErrors.js");
 const Shop = require('../model/shop.js')
-const { isSeller } = require("../middlewares/auth.js");
+const { isSeller, isAdmin, isAuthenticated } = require("../middlewares/auth.js");
 const fs = require('fs');
 const ErrorHandler = require("../utils/ErrorHandler.js");
 
@@ -117,5 +117,27 @@ router.get(
         }
     })
 );
+
+// all products -- admin
+router.get(
+  "/admin-all-products",
+  isAuthenticated,
+  isAdmin("admin"),
+  catchAsyncErrors(async (req, res, next) => {
+    try {
+      const products = await Product.find().sort({
+        deliveredAt: -1, createdAt: -1
+      });
+
+      res.status(200).json({
+        success: true,
+        products,
+      });
+    } catch (error) {
+      return next(new ErrorHandler(error.message, 500));
+    }
+  })
+);
+
 
 module.exports = router;

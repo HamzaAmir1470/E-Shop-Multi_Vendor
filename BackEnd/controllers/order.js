@@ -139,7 +139,7 @@ router.put(
       if (nextStatus === "Delivered") {
         order.delieverAt = Date.now();
         order.deliveredAt = Date.now();
-
+        
         if (order.paymentInfo) {
           order.paymentInfo.status = "succeeded";
         }

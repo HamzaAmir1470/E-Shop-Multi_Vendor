@@ -15,7 +15,7 @@ const WithdrawMoney = () => {
     const dispatch = useDispatch();
     const { seller } = useSelector((state) => state.seller);
     const [paymentMethod, setPaymentMethod] = useState(false);
-    const [withdrawAmount, setWithdrawAmount] = useState(50);
+    const [withdrawAmount, setWithdrawAmount] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [bankInfo, setBankInfo] = useState({
         bankName: "",
@@ -98,12 +98,16 @@ const WithdrawMoney = () => {
         try {
             await axios.post(
                 `${server}/withdraw/create-withdraw-request`,
-                { amount: withdrawAmount },
+                {
+                    seller,
+                    amount: withdrawAmount
+                },
                 { withCredentials: true }
             );
             toast.success("Withdrawal request submitted successfully!");
             setOpen(false);
             setWithdrawAmount(50);
+            dispatch(loadSeller());
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to submit withdrawal request");
         } finally {
@@ -406,7 +410,9 @@ const WithdrawMoney = () => {
                                                                     <input
                                                                         type="number"
                                                                         value={withdrawAmount}
-                                                                        onChange={(e) => setWithdrawAmount(Math.max(50, parseInt(e.target.value) || 0))}
+                                                                        min={50}
+                                                                        max={availableBalance}
+                                                                        onChange={(e) => setWithdrawAmount(e.target.value || "")}
                                                                         className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
                                                                         placeholder="Enter amount"
                                                                     />
