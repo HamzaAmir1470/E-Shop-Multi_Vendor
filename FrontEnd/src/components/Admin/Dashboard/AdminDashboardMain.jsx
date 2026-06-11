@@ -174,8 +174,8 @@ const OrderStatusCard = ({ deliveredOrders, pendingOrders, completionRate }) => 
 const AdminDashboardMain = ({ isMobile }) => {
     const dispatch = useDispatch();
     const { user } = useSelector((state) => state.user);
-    const {sellers} = useSelector((state) => state.seller);
-    const { isLoading } = useSelector((state) => state.order);
+    const { sellers } = useSelector((state) => state.seller);
+    const { adminOrders, adminOrderLoading, isLoading } = useSelector((state) => state.order);
     const [seller, setSeller] = useState(null);
     const products = useSelector((state) => state.product.product);
     const [expandedCard, setExpandedCard] = useState(null);
@@ -197,11 +197,15 @@ const AdminDashboardMain = ({ isMobile }) => {
         }
     }, [dispatch, user]);
 
+    const adminEarnings = adminOrders && adminOrders.reduce((acc, order) => { 
+        return acc + order.totalPrice * SERVICE_CHARGE_RATE;
+    }, 0);
+
     // Computed values
     const totalOrders = orders?.length || 0;
     const totalProducts = products?.length || 0;
     const totalSellers = sellers?.length || 0;
-    const totalEarnings = 0; 
+    const totalEarnings = adminEarnings || 0;
 
     const deliveredOrdersList = useMemo(
         () => orders?.filter(order => isDeliveredOrder(order)) || [],

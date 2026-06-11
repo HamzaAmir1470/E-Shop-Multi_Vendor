@@ -20,6 +20,7 @@ const AllWithdraw = () => {
                 withCredentials: true,
             })
             .then((res) => {
+                console.log(res.data.withdraws);
                 setData(res.data.withdraws);
             })
             .catch((error) => {

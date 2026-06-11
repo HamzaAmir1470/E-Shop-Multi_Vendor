@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Withdraw = require('../model/withdraw');
 const Shop = require('../model/shop');
-const { isSeller } = require('../middlewares/auth')
+const { isSeller, isAuthenticated, isAdmin } = require('../middlewares/auth')
 const ErrorHandler = require('../utils/errorHandler');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const Sendmail = require('../utils/sendMail');
@@ -31,10 +31,11 @@ router.post('/create-withdraw-request', isSeller, async (req, res, next) => {
         const shop = await Shop.findByIdAndUpdate(req.seller._id, {
             $push: {
                 transactions: {
-                    type: 'withdrawal',
                     seller: req.seller._id,
-                    amount: amount,
-                    date: new Date()
+                    withdrawId: withdraw._id,
+                    amount,
+                    status: "Processing",
+                    type: "withdrawal",
                 }
             },
             $inc: {
@@ -49,7 +50,6 @@ router.post('/create-withdraw-request', isSeller, async (req, res, next) => {
             message: 'Withdrawal request created successfully'
         });
 
-        await shop.save();
 
 
     } catch (error) {
@@ -95,15 +95,108 @@ const formatCurrency = (amount) => {
     return parseFloat(amount).toFixed(2);
 };
 
-// Get all withdraw requests
-router.get('/withdraws', async (req, res) => {
+// Get all withdraw requests --admin
+router.get('/get-all-withdraw-request', isAuthenticated, isAdmin("admin"), catchAsyncErrors(async (req, res) => {
     try {
-        const withdraws = await Withdraw.find().populate('seller');
-        res.status(200).json(withdraws);
+        const withdraws = await Withdraw.find().sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            withdraws
+        });
     }
     catch (error) {
         res.status(500).json({ message: 'Server error' });
     }
-});
+}));
+
+// Update withdraw request status -- admin
+router.put(
+    "/update-withdraw-request/:id",
+    isAuthenticated,
+    isAdmin("admin"),
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const { sellerId } = req.body;
+
+            // Update withdrawal request
+            const withdraw = await Withdraw.findByIdAndUpdate(
+                req.params.id,
+                {
+                    status: "succeed",
+                    updatedAt: new Date(),
+                },
+                { new: true }
+            );
+
+            if (!withdraw) {
+                return next(
+                    new ErrorHandler("Withdraw request not found", 404)
+                );
+            }
+
+            // Find seller
+            const seller = await Shop.findById(sellerId);
+
+            if (!seller) {
+                return next(
+                    new ErrorHandler("Seller not found", 404)
+                );
+            }
+
+            // Update existing transaction status
+            const transactionIndex = seller.transactions.findIndex(
+                (transaction) =>
+                    transaction.amount === withdraw.amount &&
+                    transaction.status === "Processing"
+            );
+
+            if (transactionIndex !== -1) {
+                seller.transactions[transactionIndex].status = "succeed";
+                seller.transactions[transactionIndex].updatedAt = new Date();
+
+                await seller.save();
+            }
+
+            // Send email
+            try {
+                await Sendmail({
+                    email: seller.email,
+                    subject: `Payment Confirmation - ${formatCurrency(
+                        withdraw.amount
+                    )}`,
+                    message: `
+                    Dear ${seller.name},
+
+                    Your withdrawal request has been processed successfully.
+
+                    Amount: ${formatCurrency(withdraw.amount)}
+                    Status: ${withdraw.status}
+                    Date: ${withdraw.updatedAt}
+
+                    Thank you.
+          `,
+                });
+            } catch (emailError) {
+                console.error("Email Error:", emailError);
+            }
+
+            res.status(200).json({
+                success: true,
+                message: "Withdrawal request approved successfully",
+                withdraw,
+            });
+        } catch (error) {
+            console.error("Withdraw Update Error:", error);
+
+            return next(
+                new ErrorHandler(
+                    error.message || "Internal Server Error",
+                    500
+                )
+            );
+        }
+    })
+);
 
 module.exports = router;

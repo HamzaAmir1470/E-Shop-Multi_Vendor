@@ -1,6 +1,6 @@
 import React from 'react'
 import AdminHeader from '../../components/Admin/Layout/AdminHeader'
-import AdminDashboardWithdraw from '../../components/Admin/Dashboard/AdminDashboardWithdraw.jsx'
+import AllWithdraw from '../../components/Admin/Dashboard/AdminDashboardWithdraw.jsx'
 import AdminDashboardSideBar from '../../components/Admin/Layout/AdminSidebar.jsx'
 const AdminDashboardWithdrawRequestsPage = () => {
     return (
@@ -11,7 +11,7 @@ const AdminDashboardWithdrawRequestsPage = () => {
                     <AdminDashboardSideBar active={8} />
                 </div>
                 <div className="w-[85%] md:w-[93%] lg:w-full justify-center flex">
-                    <AdminDashboardWithdraw />
+                    <AllWithdraw />
                 </div>
             </div>
         </div>

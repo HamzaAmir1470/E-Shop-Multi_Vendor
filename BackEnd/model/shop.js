@@ -58,25 +58,37 @@ const shopSchema = new mongoose.Schema({
     transactions: [
         {
             seller: {
-                type: Object,
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Shop",
                 required: true,
             },
+
+            withdrawId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "Withdraw",
+                required: true,
+            },
+
             amount: {
                 type: Number,
                 required: true,
             },
+
             status: {
                 type: String,
+                enum: ["Processing", "succeed", "rejected"],
                 default: "Processing",
             },
+
             createdAt: {
                 type: Date,
-                default: Date.now(),
+                default: Date.now,
             },
+
             updatedAt: {
                 type: Date,
-            }
-        }
+            },
+        },
     ],
     createdAt: {
         type: Date,
