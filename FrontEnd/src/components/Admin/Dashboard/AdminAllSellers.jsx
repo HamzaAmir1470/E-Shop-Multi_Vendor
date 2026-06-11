@@ -1,66 +1,67 @@
 import React, { useMemo, useEffect, useCallback, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 import { Button, IconButton, Tooltip } from '@mui/material';
-import { AiOutlineDelete } from 'react-icons/ai';
+import { AiOutlineDelete, AiOutlineEye } from 'react-icons/ai';
 import { DataGrid } from '@mui/x-data-grid';
-import { getAllUsers } from '../../../redux/actions/user.js';
+import { getAllSellers } from '../../../redux/actions/sellers.js';
 import Loader from '../../Layout/Loader.jsx';
 import axios from 'axios';
 import { server } from '../../../server.js';
 import { toast } from 'react-toastify';
 
-const AdminAllUsers = ({ isMobile }) => {
+const AdminAllSellers = ({ isMobile }) => {
     const dispatch = useDispatch();
-    const { user, users, Usersloading } = useSelector((state) => state.user);
+    const { sellers, isLoading } = useSelector((state) => state.seller);
     const [open, setOpen] = useState(false);
-    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [selectedSellerId, setSelectedSellerId] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
-        if (user?.role === 'admin') {
-            dispatch(getAllUsers());
-        }
-    }, [dispatch, user?.role]);
+        dispatch(getAllSellers());
+    }, [dispatch]);
 
-    const handleDeleteUser = useCallback(async (userId) => {
-        if (!userId) return;
+    const handleDeleteUser = useCallback(async (sellerId) => {
+        if (!sellerId) return;
 
         setIsDeleting(true);
         try {
             const { data } = await axios.delete(
-                `${server}/user/admin-delete-user/${userId}`,
+                `${server}/shop/admin-delete-seller/${sellerId}`,
                 { withCredentials: true }
             );
             toast.success(data.message);
-            dispatch(getAllUsers());
+            dispatch(getAllSellers());
             setOpen(false);
-            setSelectedUserId(null);
+            setSelectedSellerId(null);
         } catch (error) {
-            toast.error(error.response?.data?.message || 'Failed to delete user');
+            toast.error(error.response?.data?.message || 'Failed to delete seller');
         } finally {
             setIsDeleting(false);
         }
     }, [dispatch]);
 
-    const handleOpenModal = useCallback((userId) => {
-        setSelectedUserId(userId);
+    const handleOpenModal = useCallback((sellerId) => {
+        setSelectedSellerId(sellerId);
         setOpen(true);
     }, []);
 
     const handleCloseModal = useCallback(() => {
         setOpen(false);
-        setSelectedUserId(null);
+        setSelectedSellerId(null);
     }, []);
 
-    const userList = useMemo(() =>
-        users?.map((user) => ({
-            id: user._id,
-            name: user.name,
-            email: user.email,
-            role: user.role,
-            joinedAt: user.createdAt,
+    const sellerList = useMemo(() =>
+        sellers?.map((seller) => ({
+            id: seller._id,
+            name: seller.name,
+            email: seller.email,
+            address: seller.address,
+            joinedAt: seller.createdAt,
+            shopDescription: seller.description,
+            shopPhone: seller.phoneNumber,
         })) || [],
-        [users]
+        [sellers]
     );
 
     const formatDate = useCallback((dateString) => {
@@ -72,20 +73,11 @@ const AdminAllUsers = ({ isMobile }) => {
         });
     }, []);
 
-    const getRoleBadgeColor = useCallback((role) => {
-        switch (role?.toLowerCase()) {
-            case 'admin':
-                return 'bg-purple-100 text-purple-800';
-            default:
-                return 'bg-green-100 text-green-800';
-        }
-    }, []);
-
     const columns = useMemo(() => {
         const baseColumns = [
             {
                 field: "id",
-                headerName: "User ID",
+                headerName: "Seller ID",
                 minWidth: isMobile ? 120 : 200,
                 flex: 0.8,
                 renderCell: (params) => (
@@ -96,7 +88,7 @@ const AdminAllUsers = ({ isMobile }) => {
             },
             {
                 field: "name",
-                headerName: "Name",
+                headerName: "Seller Name",
                 minWidth: isMobile ? 120 : 180,
                 flex: 1,
                 renderCell: (params) => (
@@ -110,13 +102,13 @@ const AdminAllUsers = ({ isMobile }) => {
                 flex: 1.2,
             },
             {
-                field: "role",
-                headerName: "Role",
-                minWidth: isMobile ? 100 : 120,
-                flex: 0.6,
+                field: "address",
+                headerName: "Shop Address",
+                minWidth: isMobile ? 150 : 200,
+                flex: 1,
                 renderCell: (params) => (
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(params.value)}`}>
-                        {params.value || 'User'}
+                    <span className="text-sm text-gray-600">
+                        {params.value || 'No address provided'}
                     </span>
                 ),
             },
@@ -132,6 +124,23 @@ const AdminAllUsers = ({ isMobile }) => {
                 ),
             },
             {
+                field: "preview",
+                headerName: "Preview",
+                minWidth: isMobile ? 60 : 80,
+                flex: 0.5,
+                sortable: false,
+                align: "center",
+                renderCell: (params) => (
+                    <Tooltip title="View Shop">
+                        <Link to={`/shop/preview/${params.id}`} target="_blank" rel="noopener noreferrer">
+                            <IconButton size="small" color="primary">
+                                <AiOutlineEye size={isMobile ? 18 : 20} />
+                            </IconButton>
+                        </Link>
+                    </Tooltip>
+                ),
+            },
+            {
                 field: "actions",
                 headerName: "Delete",
                 minWidth: isMobile ? 60 : 80,
@@ -139,12 +148,11 @@ const AdminAllUsers = ({ isMobile }) => {
                 sortable: false,
                 align: "center",
                 renderCell: (params) => (
-                    <Tooltip title="Delete User">
+                    <Tooltip title="Delete Seller">
                         <IconButton
                             size="small"
                             color="error"
                             onClick={() => handleOpenModal(params.id)}
-                            disabled={params.row.role === 'admin'}
                         >
                             <AiOutlineDelete size={isMobile ? 18 : 20} />
                         </IconButton>
@@ -154,21 +162,21 @@ const AdminAllUsers = ({ isMobile }) => {
         ];
 
         return baseColumns;
-    }, [isMobile, formatDate, getRoleBadgeColor, handleOpenModal]);
+    }, [isMobile, formatDate, handleOpenModal]);
 
-    if (Usersloading) {
+    if (isLoading) {
         return <Loader />;
     }
 
-    if (!users || users.length === 0) {
+    if (!sellers || sellers.length === 0) {
         return (
             <div className="w-full mt-5 px-4 md:px-8">
                 <div className="max-w-7xl mx-auto">
                     <h3 className="text-xl md:text-2xl font-Poppins font-semibold pb-4">
-                        All Users
+                        All Sellers
                     </h3>
                     <div className="w-full min-h-[45vh] bg-white rounded-lg shadow-sm flex items-center justify-center">
-                        <p className="text-gray-500 text-lg">No users found</p>
+                        <p className="text-gray-500 text-lg">No sellers found</p>
                     </div>
                 </div>
             </div>
@@ -178,30 +186,22 @@ const AdminAllUsers = ({ isMobile }) => {
     return (
         <div className="w-full mt-5 px-4 md:px-8">
             <div className="max-w-7xl mx-auto">
-                <div className="flex justify-between items-center pb-4 flex-wrap gap-3">
+                <div className="flex justify-between items-center pb-4">
                     <h3 className="text-xl md:text-2xl font-Poppins font-semibold">
-                        All Users
+                        All Sellers
                     </h3>
-                    <div className="flex gap-2">
-                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                            Total: {userList.length}
-                        </span>
-                        <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-                            Admins: {userList.filter(u => u.role === 'admin').length}
-                        </span>
-                    </div>
+                    <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        Total: {sellerList.length}
+                    </span>
                 </div>
 
                 <div className="w-full min-h-[45vh] bg-white rounded-lg shadow-sm overflow-hidden">
                     <DataGrid
-                        rows={userList}
+                        rows={sellerList}
                         columns={columns}
                         initialState={{
                             pagination: {
                                 paginationModel: { pageSize: 10, page: 0 },
-                            },
-                            sorting: {
-                                sortModel: [{ field: 'joinedAt', sort: 'desc' }],
                             },
                         }}
                         pageSizeOptions={[5, 10, 25, 50]}
@@ -231,7 +231,6 @@ const AdminAllUsers = ({ isMobile }) => {
                     />
                 </div>
 
-                {/* Delete Confirmation Modal */}
                 {open && (
                     <div
                         className="fixed inset-0 z-[999] bg-black/50 flex items-center justify-center p-4 animate-fadeIn"
@@ -268,7 +267,7 @@ const AdminAllUsers = ({ isMobile }) => {
                                 </div>
 
                                 <p className="text-gray-600 text-center mb-6">
-                                    Are you sure you want to delete this user?
+                                    Are you sure you want to delete this seller?
                                     <span className="block text-sm text-red-500 mt-1">This action cannot be undone.</span>
                                 </p>
 
@@ -282,7 +281,7 @@ const AdminAllUsers = ({ isMobile }) => {
                                         Cancel
                                     </button>
                                     <button
-                                        onClick={() => handleDeleteUser(selectedUserId)}
+                                        onClick={() => handleDeleteUser(selectedSellerId)}
                                         disabled={isDeleting}
                                         className="w-full sm:flex-1 px-4 py-2.5 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                     >
@@ -295,7 +294,7 @@ const AdminAllUsers = ({ isMobile }) => {
                                                 Deleting...
                                             </>
                                         ) : (
-                                            'Delete User'
+                                            'Delete Seller'
                                         )}
                                     </button>
                                 </div>
@@ -308,4 +307,4 @@ const AdminAllUsers = ({ isMobile }) => {
     );
 };
 
-export default AdminAllUsers;
+export default AdminAllSellers;

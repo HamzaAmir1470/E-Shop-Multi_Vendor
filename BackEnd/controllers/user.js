@@ -500,5 +500,29 @@ router.get(
     })
 );
 
+// delete user -- admin
+router.delete(
+    "/admin-delete-user/:id",
+    isAuthenticated,
+    isAdmin("admin"),
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const user = await User.findById(req.params.id);
+            if (!user) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found",
+                });
+            }
+            await user.deleteOne();
+            res.status(200).json({
+                success: true,
+                message: "User deleted successfully!",
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    })
+);
 
 module.exports = router;
