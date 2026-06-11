@@ -3,6 +3,7 @@ import { createReducer } from "@reduxjs/toolkit";
 const initialState = {
   isAuthenticated: false,
   loading: true,
+  Usersloading: true,
   addressloading: false,
   user: null,
   error: null,
@@ -63,5 +64,19 @@ export const userReducer = createReducer(initialState, (builder) => {
     .addCase("deleteUserAddressFailed", (state, action) => {
       state.addressloading = false;
       state.error = action.payload;
+    })
+
+    // get all users --admin
+    .addCase("getAllUsersRequest", (state) => {
+      state.Usersloading = true;
+    })
+    .addCase("getAllUsersSuccess", (state, action) => {
+      state.Usersloading = false;
+      state.users = action.payload;
+    })
+    .addCase("getAllUsersFailed", (state, action) => {
+      state.Usersloading = false;
+      state.error = action.payload;
     });
+
 });

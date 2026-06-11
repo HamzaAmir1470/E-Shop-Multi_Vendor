@@ -8,7 +8,7 @@ import Store from './redux/store.js';
 import { loadSeller, loadUser } from './redux/actions/user.js';
 import ProtectedRoute from './Routes/ProtectedRoute.js';
 import { ShopHomePage, ShopDashboardPage, ShopCreateProductPage, ShopAllProducts, ShopCreateEvents, ShopAllEvents, ShopAllCoupouns, ShopPreviewPage, ShopAllOrders, ShopOrderDetails, ShopRefundsPage, ShopAllRefunds, ShopSettingsPage, ShopWithdrawMoneyPage, ShopInboxPage } from './Routes/ShopRoutes.js';
-import { AdminDashboardPage } from './Routes/AdminRoutes.js'
+import { AdminDashboardPage , AdminDashboardUsers} from './Routes/AdminRoutes.js'
 import SellerProtectedRoute from './Routes/SellerProtectedRoute.jsx'
 import { getAllProducts } from './redux/actions/product.js';
 import { getAllEvents } from './redux/actions/event.js';
@@ -267,6 +267,14 @@ const App = () => {
             element={
               <ProtectedAdminRoute>
                 <AdminDashboardPage />
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route
+            path="/admin-users"
+            element={
+              <ProtectedAdminRoute>
+                <AdminDashboardUsers />
               </ProtectedAdminRoute>
             }
           />

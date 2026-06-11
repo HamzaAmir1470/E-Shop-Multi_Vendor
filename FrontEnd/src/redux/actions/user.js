@@ -96,6 +96,7 @@ export const updateUserAddress =
                 });
             }
         };
+
 // delte user address
 export const deleteUserAddress = (addressId) => async (dispatch) => {
     try {
@@ -118,6 +119,30 @@ export const deleteUserAddress = (addressId) => async (dispatch) => {
         });
     }
 };
+
+
+// get all users --admin
+export const getAllUsers = () => async (dispatch) => {
+    try {
+        dispatch({
+            type: "getAllUsersRequest",
+        });
+
+        const { data } = await axios.get(`${server}/user/admin-all-users`, { withCredentials: true });
+
+        dispatch({
+            type: "getAllUsersSuccess",
+            payload: data.users,
+        })
+
+    } catch (error) {
+        dispatch({
+            type: "getAllUsersFailed",
+            payload: error.response.data.message
+        })
+    }
+}
+
 // Clear Errors
 export const clearErrors = () => (dispatch) => {
     dispatch({ type: "clearErrors" });

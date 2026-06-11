@@ -10,7 +10,7 @@ const crypto = require('crypto');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const sendMail = require('../utils/sendMail');
 const sendToken = require('../utils/jwtToken');
-const { isAuthenticated } = require('../middlewares/auth');
+const { isAuthenticated, isAdmin } = require('../middlewares/auth');
 
 router.post("/create-user", upload.single('file'), async (req, res, next) => {
     try {
@@ -478,5 +478,27 @@ router.get("/user-info/:id", catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler(error.message, 500));
     }
 }));
+
+// get all users
+router.get(
+    "/admin-all-users",
+    isAuthenticated,
+    isAdmin("admin"),
+    catchAsyncErrors(async (req, res, next) => {
+        try {
+            const users = await User.find().sort({
+                createdAt: -1
+            });
+
+            res.status(200).json({
+                success: true,
+                users,
+            });
+        } catch (error) {
+            return next(new ErrorHandler(error.message, 500));
+        }
+    })
+);
+
 
 module.exports = router;
