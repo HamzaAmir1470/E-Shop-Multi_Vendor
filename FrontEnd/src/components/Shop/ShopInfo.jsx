@@ -7,7 +7,7 @@ import axios from 'axios';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 const getShopAvatarUrl = (avatar) => {
-  if (!avatar) return 'https://via.placeholder.com/140';
+  if (!avatar) return '';
 
   if (typeof avatar === 'string') {
     return avatar.startsWith('http')
@@ -21,7 +21,7 @@ const getShopAvatarUrl = (avatar) => {
       : `${backend_url}${avatar.url.startsWith('/') ? '' : '/'}${avatar.url}`;
   }
 
-  return 'https://via.placeholder.com/140';
+  return '';
 };
 
 

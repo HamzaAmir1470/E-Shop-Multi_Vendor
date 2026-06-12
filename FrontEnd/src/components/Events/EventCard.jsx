@@ -144,9 +144,6 @@ const EventCard = ({ data, active = true }) => {
                             src={`${backend_url}${data?.images?.[currentImageIndex] || data?.images?.[0]}`}
                             alt={data?.name}
                             className="max-w-full max-h-full w-90 h-90 object-contain transform group-hover:scale-105 transition-transform duration-500 drop-shadow-2xl"
-                            onError={(e) => {
-                                e.target.src = 'https://via.placeholder.com/400?text=No+Image';
-                            }}
                         />
                     </div>
                 </div>
@@ -281,9 +278,7 @@ const EventCard = ({ data, active = true }) => {
                                 src={`${backend_url}${data.shop.avatar}`}
                                 alt={data.shop.name}
                                 className="w-8 h-8 rounded-full object-cover border-2 border-purple-600"
-                                onError={(e) => {
-                                    e.target.src = 'https://via.placeholder.com/32';
-                                }}
+                               
                             />
                             <div className="flex-1">
                                 <p className="text-sm font-semibold text-gray-900">{data.shop.name}</p>

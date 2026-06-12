@@ -24,7 +24,7 @@ export const createProduct = (newForm) => async (dispatch) => {
     } catch (error) {
         dispatch({
             type: "productCreateFail",
-            payload: error.response.data.message,
+            payload: error.response.data?.message,
         });
     }
 };
@@ -46,7 +46,7 @@ export const getAllProductsShop = (id) => async (dispatch) => {
     } catch (error) {
         dispatch({
             type: "getAllProductsShopFailed",
-            payload: error.response.data.message,
+            payload: error.response.data?.message,
         });
     }
 }
@@ -69,7 +69,7 @@ export const deleteProduct = (id) => async (dispatch) => {
     } catch (error) {
         dispatch({
             type: "deleteProductFailed",
-            payload: error.response.data.message,
+            payload: error.response.data?.message,
         });
     }
 };
@@ -92,7 +92,7 @@ export const getAllProducts = () => async (dispatch) => {
     } catch (error) {
         dispatch({
             type: "getAllProductsFailed",
-            payload: error.response.data.message,
+            payload: error.response.data?.message,
         });
     }
 };
@@ -113,7 +113,7 @@ export const getSingleProduct = (id) => async (dispatch) => {
     } catch (error) {
         dispatch({
             type: "getSingleProductFailed",
-            payload: error.response.data.message,
+            payload: error.response.data?.message,
         });
     }
 };
