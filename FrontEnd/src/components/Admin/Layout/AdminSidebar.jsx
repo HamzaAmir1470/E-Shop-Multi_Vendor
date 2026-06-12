@@ -22,9 +22,6 @@ const AdminSidebar = ({ active, isMobile = false, toggleMobileMenu }) => {
         { id: 5, label: "All Events", icon: MdOutlineLocalOffer, path: "/admin-events" },
         { id: 6, label: "All Products", icon: FiShoppingBag, path: "/admin-products" },
         { id: 7, label: "Withdraw Requests", icon: CiMoneyBill, path: "/admin-withdraw-requests" },
-        // { id: 8, label: "Shop Inbox", icon: BiMessageSquareDetail, path: "/dashboard-messages" },
-        // { id: 9, label: "Discount Codes", icon: AiOutlineGift, path: "/dashboard-coupons" },
-        // { id: 10, label: "Refunds", icon: HiOutlineReceiptRefund, path: "/dashboard-refunds" },
         { id: 11, label: "Settings", icon: CiSettings, path: "/profile" },
     ];
 

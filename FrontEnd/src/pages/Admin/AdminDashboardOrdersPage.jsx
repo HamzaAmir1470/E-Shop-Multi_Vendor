@@ -96,7 +96,7 @@ const AdminDashboardOrders = () => {
       <div className="min-h-screen bg-gray-50">
         <AdminHeader />
         <div className="flex">
-          <AdminSideBar active={2} />
+          <AdminSidebar active={2} />
           <div className="flex-1 flex items-center justify-center min-h-[calc(100vh-64px)]">
             <div className="text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
