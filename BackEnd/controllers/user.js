@@ -49,7 +49,7 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
             },
         };
         const activationToken = createActivationToken(user);
-        const activationUrl = `http://localhost:5173/activation/${activationToken}`;
+        const activationUrl = `https://sultanf.vercel.app/activation/${activationToken}`;
         try {
             await sendMail({
                 email: user.email,
@@ -159,7 +159,7 @@ router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
 
         await user.save({ validateBeforeSave: false });
 
-        const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+        const resetUrl = `https://sultanf.vercel.app/reset-password/${resetToken}`;
 
         await sendMail({
             email: user.email,
