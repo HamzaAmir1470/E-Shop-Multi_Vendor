@@ -3,7 +3,7 @@ const router = express.Router();
 const Withdraw = require('../model/withdraw');
 const Shop = require('../model/shop');
 const { isSeller, isAuthenticated, isAdmin } = require('../middlewares/auth')
-const ErrorHandler = require('../utils/errorHandler');
+const ErrorHandler = require('../utils/ErrorHandler');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const Sendmail = require('../utils/sendMail');
 
