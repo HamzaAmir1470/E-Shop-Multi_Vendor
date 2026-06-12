@@ -23,7 +23,7 @@ app.use(cors({
 
 app.use(express.json());
 app.use(cookieParser());
-app.use("/", express.static("uploads"));
+app.use("/", express.static(path.join(__dirname, "./uploads")));
 
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
@@ -62,7 +62,7 @@ app.use('/api/v2/withdraw', withdraw);
 app.use(ErrorHandler);
 
 // health check
-app.get('/', (req, res) => {
+app.get('/test', (req, res) => {
     res.status(200).json({
         success: true,
         message: 'Server is healthy'
