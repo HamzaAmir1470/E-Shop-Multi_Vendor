@@ -1,31 +1,15 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { server } from "../../server";
 
 const CountDown = ({ data }) => {
     const [timeLeft, setTimeLeft] = useState({});
-    const [deleted, setDeleted] = useState(false);
 
     useEffect(() => {
-        let timer;
-
-        const update = async () => {
-            if (!data?.endDate) return;
-
-            const difference = new Date(data.endDate).getTime() - new Date().getTime();
+        const update = () => {
+            const difference =
+                new Date(data?.endDate).getTime() - new Date().getTime();
 
             if (difference <= 0) {
                 setTimeLeft({});
-
-                // Delete expired event only once
-                if (data?._id && !deleted) {
-                    setDeleted(true);
-                    try {
-                        await axios.delete(`${server}/events/delete-shop-event/${data._id}`);
-                    } catch (error) {
-                        console.error("Error deleting expired event:", error);
-                    }
-                }
                 return;
             }
 
@@ -38,10 +22,9 @@ const CountDown = ({ data }) => {
         };
 
         update();
-        timer = setInterval(update, 1000);
-
+        const timer = setInterval(update, 1000);
         return () => clearInterval(timer);
-    }, [data?.endDate, data?._id, deleted]);
+    }, [data?._id]);
 
     if (!Object.keys(timeLeft).length) {
         return <span className="text-red-500 text-xl font-semibold">Time's Up</span>;
@@ -49,20 +32,11 @@ const CountDown = ({ data }) => {
 
     return (
         <div className="flex gap-2 text-indigo-600 font-bold text-lg">
-            {timeLeft.days > 0 && (
-                <span className="px-2 py-1 bg-indigo-100 rounded-lg">
-                    {timeLeft.days}d
+            {Object.entries(timeLeft).map(([key, value]) => (
+                <span key={key} className="px-2 py-1 bg-indigo-100 rounded-lg">
+                    {value} {key}
                 </span>
-            )}
-            <span className="px-2 py-1 bg-indigo-100 rounded-lg">
-                {String(timeLeft.hours).padStart(2, '0')}h
-            </span>
-            <span className="px-2 py-1 bg-indigo-100 rounded-lg">
-                {String(timeLeft.minutes).padStart(2, '0')}m
-            </span>
-            <span className="px-2 py-1 bg-indigo-100 rounded-lg">
-                {String(timeLeft.seconds).padStart(2, '0')}s
-            </span>
+            ))}
         </div>
     );
 };
