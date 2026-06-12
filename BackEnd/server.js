@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 // connfig
 if (process.env.NODE_ENV !== 'PRODUCTION') {
     dotenv.config({
-        path: './BackEnd/config/.env'
+        path: 'config/.env'
     });
 }
 

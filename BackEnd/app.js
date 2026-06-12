@@ -24,12 +24,15 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 app.use("/", express.static("uploads"));
+app.use("/", (req, res) => {
+    res.send("Welcome to MultiVendor API");
+});
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
 // config
 if (process.env.NODE_ENV !== 'PRODUCTION') {
     dotenv.config({
-        path: './BackEnd/config/.env'
+        path: 'config/.env'
     });
 }
 
