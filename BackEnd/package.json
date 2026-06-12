@@ -5,14 +5,11 @@
   "license": "ISC",
   "author": "Hamza Amir",
   "type": "commonjs",
-  "main": "server.js",
-  "engines": {
-    "node": "22.x"
-  },
+  "main": "BackEnd/server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon server.js",
-    "start": "node server.js"
+    "dev": "nodemon BackEnd/server.js",
+    "start": "node BackEnd/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

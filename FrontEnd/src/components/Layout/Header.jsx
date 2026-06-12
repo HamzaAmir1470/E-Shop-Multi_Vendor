@@ -81,9 +81,10 @@ const Header = ({ activeHeading }) => {
 
   // Safe avatar URL with fallback
   const avatarSrc = user?.avatar?.url
-    ? `${backend_url}${user.avatar.url}`
+    ? `${backend_url}${encodeURIComponent(user.avatar.url)}`
     : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
-
+  
+  console.log(avatarSrc);
   const logoutHandler = () => {
     axios
       .get(`${server}/user/logout`, { withCredentials: true })
@@ -325,7 +326,7 @@ const Header = ({ activeHeading }) => {
                       className="w-[38px] h-[38px] rounded-full object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105"
                       onError={(e) => {
                         e.target.onerror = null;
-                        e.target.src = "https://via.placeholder.com/150?text=User";
+                        // e.target.src = "https://via.placeholder.com/150?text=User";
                       }}
                     />
                   </div>

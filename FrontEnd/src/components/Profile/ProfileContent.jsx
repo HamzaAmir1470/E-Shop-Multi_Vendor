@@ -60,9 +60,11 @@ const ProfileContent = ({ active }) => {
         });
     }
 
+   // Safe avatar URL with fallback
     const avatarSrc = user?.avatar?.url
-        ? `${backend_url}${user.avatar.url.startsWith('/') ? '' : '/'}${user.avatar.url}`
-        : "/default-avatar.png";
+      ? `${backend_url}${user.avatar.url}`
+      : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
+    
 
     return (
         <div className="w-full px-5 pt-10 md:pt-0 md:pl-10">
