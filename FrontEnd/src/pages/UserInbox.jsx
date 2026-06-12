@@ -17,10 +17,9 @@ import {
 import { TfiGallery } from "react-icons/tfi";
 import { BiSmile, BiImageAdd } from "react-icons/bi";
 import { IoMdAttach } from "react-icons/io";
-import socketIo from "socket.io-client";
+import io from "socket.io-client";
 
 const ENDPOINT = "http://localhost:4000/";
-const socketId = socketIo(ENDPOINT, { transports: ["websocket"] });
 
 const UserInbox = () => {
     const { user, loading } = useSelector((state) => state.user);
@@ -31,16 +30,27 @@ const UserInbox = () => {
     const [newMessage, setNewMessage] = useState("");
     const [userData, setUserData] = useState(null);
     const [onlineUsers, setOnlineUsers] = useState([]);
-    const [images, setImages] = useState();
     const [activeStatus, setActiveStatus] = useState(false);
     const [open, setOpen] = useState(false);
     const [typing, setTyping] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [socket, setSocket] = useState(null);
+    const [isLoadingMessages, setIsLoadingMessages] = useState(false);
     const scrollRef = useRef(null);
     const typingTimeoutRef = useRef(null);
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Initialize socket connection
+    useEffect(() => {
+        const newSocket = io(ENDPOINT, { transports: ["websocket"] });
+        setSocket(newSocket);
+
+        return () => {
+            newSocket.close();
+        };
+    }, []);
 
     // Check if mobile
     useEffect(() => {
@@ -65,34 +75,38 @@ const UserInbox = () => {
     }, [open, isMobile, navigate]);
 
     useEffect(() => {
-        socketId.on("getMessage", (data) => {
+        if (!socket) return;
+
+        socket.on("getMessage", (data) => {
             setArrivalMessage({
                 sender: data.senderId,
                 text: data.text,
+                images: data.images,
                 createdAt: Date.now(),
             });
         });
 
-        socketId.on("typing", ({ senderId, isTyping }) => {
+        socket.on("typing", ({ senderId, isTyping }) => {
             if (currentChat?.members.includes(senderId)) {
                 setIsTyping(isTyping);
             }
         });
 
         return () => {
-            socketId.off("getMessage");
-            socketId.off("typing");
+            socket.off("getMessage");
+            socket.off("typing");
         };
-    }, [currentChat]);
+    }, [socket, currentChat]);
 
     useEffect(() => {
-        arrivalMessage &&
-            currentChat?.members.includes(arrivalMessage.sender) &&
+        if (arrivalMessage && currentChat?.members.includes(arrivalMessage.sender)) {
             setMessages((prev) => [...prev, arrivalMessage]);
+        }
     }, [arrivalMessage, currentChat]);
 
     useEffect(() => {
         const getConversation = async () => {
+            if (!user?._id) return;
             try {
                 const response = await axios.get(
                     `${server}/conversation/get-all-conversation-user/${user?._id}`,
@@ -102,21 +116,27 @@ const UserInbox = () => {
                 );
                 setConversations(response.data.conversations);
             } catch (error) {
-                // console.log(error);
+                console.log(error);
             }
         };
         getConversation();
-    }, [user, messages]);
+    }, [user?._id]);
 
     useEffect(() => {
-        if (user) {
+        if (user && socket) {
             const sellerId = user?._id;
-            socketId.emit("addUser", sellerId);
-            socketId.on("getUsers", (data) => {
+            socket.emit("addUser", sellerId);
+            socket.on("getUsers", (data) => {
                 setOnlineUsers(data);
             });
         }
-    }, [user]);
+
+        return () => {
+            if (socket) {
+                socket.off("getUsers");
+            }
+        };
+    }, [user, socket]);
 
     const onlineCheck = (chat) => {
         const chatMembers = chat.members.find((member) => member !== user?._id);
@@ -125,7 +145,10 @@ const UserInbox = () => {
     };
 
     useEffect(() => {
+        if (!currentChat?._id) return;
+
         const getMessage = async () => {
+            setIsLoadingMessages(true);
             try {
                 const response = await axios.get(
                     `${server}/message/get-all-messages/${currentChat?._id}`
@@ -133,17 +156,19 @@ const UserInbox = () => {
                 setMessages(response.data.messages);
             } catch (error) {
                 console.log(error);
+            } finally {
+                setIsLoadingMessages(false);
             }
         };
         getMessage();
-    }, [currentChat]);
+    }, [currentChat?._id]);
 
     const handleTyping = (e) => {
         setNewMessage(e.target.value);
 
-        if (!typing) {
+        if (!typing && socket && currentChat) {
             setTyping(true);
-            socketId.emit("typing", {
+            socket.emit("typing", {
                 senderId: user._id,
                 receiverId: currentChat?.members.find((member) => member !== user._id),
                 isTyping: true,
@@ -153,110 +178,149 @@ const UserInbox = () => {
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         typingTimeoutRef.current = setTimeout(() => {
             setTyping(false);
-            socketId.emit("typing", {
-                senderId: user._id,
-                receiverId: currentChat?.members.find((member) => member !== user._id),
-                isTyping: false,
-            });
+            if (socket && currentChat) {
+                socket.emit("typing", {
+                    senderId: user._id,
+                    receiverId: currentChat?.members.find((member) => member !== user._id),
+                    isTyping: false,
+                });
+            }
         }, 1000);
     };
 
-    const sendMessageHandler = async (e) => {
-        e.preventDefault();
-        if (newMessage.trim() === "") return;
+    const updateLastMessage = async (lastMessageText) => {
+        if (!currentChat) return;
 
-        const message = {
-            sender: user._id,
-            text: newMessage,
-            conversationId: currentChat._id,
-        };
-        const receiverId = currentChat.members.find((member) => member !== user._id);
-
-        socketId.emit("sendMessage", {
-            senderId: user._id,
-            receiverId,
-            text: newMessage,
-        });
-
-        try {
-            await axios
-                .post(`${server}/message/create-new-message`, message)
-                .then((res) => {
-                    setMessages([...messages, res.data.message]);
-                    updateLastMessage();
-                })
-                .catch((error) => {
-                    console.log(error);
-                });
-        } catch (error) {
-            console.log(error);
+        if (socket) {
+            socket.emit("updateLastMessage", {
+                lastMessage: lastMessageText,
+                lastMessageId: user._id,
+            });
         }
-    };
-
-    const updateLastMessage = async () => {
-        socketId.emit("updateLastMessage", {
-            lastMessage: newMessage,
-            lastMessageId: user._id,
-        });
 
         await axios
             .put(`${server}/conversation/update-last-message/${currentChat._id}`, {
-                lastMessage: newMessage,
+                lastMessage: lastMessageText,
                 lastMessageId: user._id,
-            })
-            .then((res) => {
-                setNewMessage("");
             })
             .catch((error) => {
                 console.log(error);
             });
     };
 
-    const handleImageUpload = async (e) => {
-        const reader = new FileReader();
+    const sendMessageHandler = async (e) => {
+        e.preventDefault();
+        if (newMessage.trim() === "" || !currentChat) return;
 
-        reader.onload = () => {
-            if (reader.readyState === 2) {
-                setImages(reader.result);
-                imageSendingHandler(reader.result);
-            }
+        const messageData = {
+            sender: user._id,
+            text: newMessage,
+            conversationId: currentChat._id,
         };
 
-        reader.readAsDataURL(e.target.files[0]);
-    };
-
-    const imageSendingHandler = async (e) => {
         const receiverId = currentChat.members.find((member) => member !== user._id);
 
-        socketId.emit("sendMessage", {
-            senderId: user._id,
-            receiverId,
-            images: e,
-        });
+        // Optimistic update
+        const tempMessage = {
+            _id: Date.now(),
+            ...messageData,
+            isTemp: true
+        };
+        setMessages([...messages, tempMessage]);
+
+        if (socket) {
+            socket.emit("sendMessage", {
+                senderId: user._id,
+                receiverId,
+                text: newMessage,
+            });
+        }
 
         try {
-            await axios
-                .post(`${server}/message/create-new-message`, {
-                    images: e,
-                    sender: user._id,
-                    text: newMessage,
-                    conversationId: currentChat._id,
-                })
-                .then((res) => {
-                    setImages();
-                    setMessages([...messages, res.data.message]);
-                    updateLastMessageForImage();
-                });
+            const res = await axios.post(`${server}/message/create-new-message`, messageData);
+            setMessages(prev => prev.map(msg =>
+                msg._id === tempMessage._id ? res.data.message : msg
+            ));
+            await updateLastMessage(newMessage);
+            setNewMessage("");
         } catch (error) {
             console.log(error);
+            setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
+            alert('Failed to send message. Please try again.');
         }
     };
 
-    const updateLastMessageForImage = async () => {
-        await axios.put(`${server}/conversation/update-last-message/${currentChat._id}`, {
-            lastMessage: "📷 Photo",
-            lastMessageId: user._id,
-        });
+    const handleImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file || !currentChat) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file');
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            alert('Image size should be less than 5MB');
+            return;
+        }
+
+        await imageSendingHandler(file);
+        e.target.value = '';
+    };
+
+    const imageSendingHandler = async (file) => {
+        const formData = new FormData();
+        formData.append("images", file);
+        formData.append("sender", user._id);
+        formData.append("text", newMessage || "");
+        formData.append("conversationId", currentChat._id);
+
+        const receiverId = currentChat.members.find((member) => member !== user._id);
+
+        // Create object URL for preview
+        const previewUrl = URL.createObjectURL(file);
+
+        // Optimistic update with local preview
+        const tempMessage = {
+            _id: Date.now(),
+            sender: user._id,
+            text: newMessage || "",
+            images: previewUrl,
+            conversationId: currentChat._id,
+            createdAt: Date.now(),
+            isTemp: true,
+            isImagePreview: true
+        };
+
+        setMessages([...messages, tempMessage]);
+        setNewMessage("");
+
+        if (socket) {
+            socket.emit("sendMessage", {
+                senderId: user._id,
+                receiverId,
+                images: file,
+            });
+        }
+
+        try {
+            const res = await axios.post(`${server}/message/create-new-message`, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }
+            });
+
+            URL.revokeObjectURL(previewUrl);
+            setMessages(prev => prev.map(msg =>
+                msg._id === tempMessage._id ? res.data.message : msg
+            ));
+            await updateLastMessage("📷 Photo");
+        } catch (error) {
+            console.log(error);
+            URL.revokeObjectURL(previewUrl);
+            setMessages(prev => prev.filter(msg => msg._id !== tempMessage._id));
+            alert('Failed to send image. Please try again.');
+        }
     };
 
     useEffect(() => {
@@ -265,8 +329,23 @@ const UserInbox = () => {
 
     const handleCloseChat = () => {
         setOpen(false);
+        setCurrentChat(null);
+        setMessages([]);
         navigate('/inbox');
     };
+
+    // Handle URL params for opening specific chat
+    useEffect(() => {
+        const queryParams = new URLSearchParams(location.search);
+        const chatId = queryParams.get('chat');
+        if (chatId && conversations.length > 0) {
+            const chat = conversations.find(c => c._id === chatId);
+            if (chat) {
+                setCurrentChat(chat);
+                setOpen(true);
+            }
+        }
+    }, [location.search, conversations]);
 
     return (
         <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -328,6 +407,7 @@ const UserInbox = () => {
                     handleTyping={handleTyping}
                     isTyping={isTyping}
                     isMobile={isMobile}
+                    isLoadingMessages={isLoadingMessages}
                 />
             )}
         </div>
@@ -358,7 +438,7 @@ const MessageList = ({
         setCurrentChat(data);
         setUserData(user);
         setActiveStatus(online);
-        navigate(`/inbox?${data._id}`);
+        navigate(`/inbox?chat=${data._id}`);
     };
 
     useEffect(() => {
@@ -374,15 +454,14 @@ const MessageList = ({
         };
 
         fetchUser();
-    }, [otherId]);
+    }, [otherId, online, setActiveStatus]);
 
     const isLastMessageFromMe = data.lastMessageId === me;
 
     return (
         <div
-            className={`w-full flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 active:bg-gray-100 ${
-                active ? "bg-blue-50/50 border-l-4 border-blue-500" : "bg-transparent"
-            }`}
+            className={`w-full flex items-center p-3 sm:p-4 cursor-pointer transition-all duration-200 hover:bg-gray-50 active:bg-gray-100 ${active ? "bg-blue-50/50 border-l-4 border-blue-500" : "bg-transparent"
+                }`}
             onClick={handleClick}
         >
             {/* Avatar Section */}
@@ -398,9 +477,8 @@ const MessageList = ({
                     alt={user?.name}
                 />
                 <div
-                    className={`absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-white ${
-                        online ? "bg-green-500 animate-pulse" : "bg-gray-400"
-                    }`}
+                    className={`absolute bottom-0 right-0 w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full border-2 border-white ${online ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                        }`}
                 />
             </div>
 
@@ -444,15 +522,34 @@ const UserInboxs = ({
     handleTyping,
     isTyping,
     isMobile,
+    isLoadingMessages,
 }) => {
     const [showOptions, setShowOptions] = useState(false);
+    const fileInputRef = useRef(null);
+
+    const triggerImageUpload = () => {
+        fileInputRef.current?.click();
+    };
+
+    // Helper function to get image URL
+    const getImageUrl = (imagePath) => {
+        if (!imagePath) return null;
+
+        if (imagePath.startsWith('blob:')) return imagePath;
+
+        if (imagePath.startsWith('http')) return imagePath;
+
+        const cleanPath = imagePath.replace(/^\/+/, '').replace(/^uploads\//, '');
+        const baseUrl = backend_url.replace(/\/$/, '');
+
+        return `${baseUrl}/${cleanPath}`;
+    };
 
     return (
         <div className="h-screen flex flex-col bg-gray-50">
             {/* Chat Header */}
             <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-2 sm:py-3 flex items-center justify-between shadow-sm sticky top-0 z-10">
                 <div className="flex items-center gap-2 sm:gap-3">
-                    {/* Back Button */}
                     <button
                         onClick={() => setOpen()}
                         className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors active:bg-gray-200"
@@ -460,7 +557,7 @@ const UserInboxs = ({
                     >
                         <AiOutlineArrowLeft size={isMobile ? 18 : 20} className="text-gray-600" />
                     </button>
-                    
+
                     <img
                         src={
                             userData?.avatar
@@ -477,9 +574,8 @@ const UserInboxs = ({
                         </h2>
                         <div className="flex items-center gap-1 text-xs">
                             <div
-                                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${
-                                    activeStatus ? "bg-green-500 animate-pulse" : "bg-gray-400"
-                                }`}
+                                className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full ${activeStatus ? "bg-green-500 animate-pulse" : "bg-gray-400"
+                                    }`}
                             />
                             <span className="text-gray-500 text-[10px] sm:text-xs">
                                 {activeStatus ? "Active now" : "Offline"}
@@ -487,7 +583,7 @@ const UserInboxs = ({
                         </div>
                     </div>
                 </div>
-                <button 
+                <button
                     onClick={() => setShowOptions(!showOptions)}
                     className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors active:bg-gray-200"
                 >
@@ -497,49 +593,74 @@ const UserInboxs = ({
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto px-2 sm:px-4 py-4 sm:py-6 space-y-3 sm:space-y-4">
-                {messages?.map((item, index) => {
-                    const isOwnMessage = item.sender === sellerId;
-                    return (
-                        <div
-                            key={index}
-                            ref={scrollRef}
-                            className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} animate-fade-in`}
-                        >
-                            {!isOwnMessage && (
-                                <img
-                                    src={
-                                        userData?.avatar
-                                            ? `${backend_url}/${userData.avatar}`
-                                            : "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" +
-                                            (userData?.name || "User")
-                                    }
-                                    className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover mr-1.5 sm:mr-2 self-end mb-1"
-                                    alt="avatar"
-                                />
-                            )}
-                            <div className={`max-w-[85%] sm:max-w-[70%] ${isOwnMessage ? "items-end" : "items-start"}`}>
-                                {item.text && (
-                                    <div
-                                        className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl ${
-                                            isOwnMessage
-                                                ? "bg-blue-600 text-white rounded-br-sm"
-                                                : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
-                                        }`}
-                                    >
-                                        <p className="text-sm sm:text-base break-words">{item.text}</p>
-                                    </div>
+                {isLoadingMessages ? (
+                    <div className="flex justify-center items-center h-full">
+                        <div className="text-gray-500">Loading messages...</div>
+                    </div>
+                ) : (
+                    messages?.map((item, index) => {
+                        const isOwnMessage = item.sender === sellerId;
+                        const imageUrl = item.images ? getImageUrl(item.images) : null;
+
+                        return (
+                            <div
+                                key={item._id || index}
+                                ref={index === messages.length - 1 ? scrollRef : null}
+                                className={`flex ${isOwnMessage ? "justify-end" : "justify-start"} animate-fade-in`}
+                            >
+                                {!isOwnMessage && (
+                                    <img
+                                        src={
+                                            userData?.avatar
+                                                ? `${backend_url}/${userData.avatar}`
+                                                : "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" +
+                                                (userData?.name || "User")
+                                        }
+                                        className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover mr-1.5 sm:mr-2 self-end mb-1"
+                                        alt="avatar"
+                                    />
                                 )}
-                                <p
-                                    className={`text-[8px] sm:text-[10px] text-gray-400 mt-1 ${
-                                        isOwnMessage ? "text-right" : "text-left"
-                                    }`}
-                                >
-                                    {format(item.createdAt)}
-                                </p>
+                                <div className={`max-w-[85%] sm:max-w-[70%] ${isOwnMessage ? "items-end" : "items-start"}`}>
+                                    {item.text && item.text.trim() !== "" && (
+                                        <div
+                                            className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl ${isOwnMessage
+                                                    ? "bg-blue-600 text-white rounded-br-sm"
+                                                    : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
+                                                }`}
+                                        >
+                                            <p className="text-sm sm:text-base break-words">{item.text}</p>
+                                        </div>
+                                    )}
+                                    {imageUrl && (
+                                        <div className="mt-2">
+                                            <img
+                                                src={imageUrl}
+                                                alt="Shared image"
+                                                className="max-w-[250px] sm:max-w-[300px] max-h-[250px] sm:max-h-[300px] object-cover rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                                                onClick={() => {
+                                                    if (!item.isTemp) {
+                                                        window.open(imageUrl, '_blank');
+                                                    }
+                                                }}
+                                                onError={(e) => {
+                                                    console.error('Image failed to load:', imageUrl);
+                                                    e.target.style.display = 'none';
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+                                    <p
+                                        className={`text-[8px] sm:text-[10px] text-gray-400 mt-1 ${isOwnMessage ? "text-right" : "text-left"
+                                            }`}
+                                    >
+                                        {format(item.createdAt)}
+                                        {item.isTemp && " (Sending...)"}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    );
-                })}
+                        );
+                    })
+                )}
                 {isTyping && (
                     <div className="flex justify-start animate-fade-in">
                         <div className="bg-gray-200 px-3 py-2 sm:px-4 sm:py-2 rounded-2xl rounded-bl-sm">
@@ -556,13 +677,21 @@ const UserInboxs = ({
             {/* Input Area */}
             <form onSubmit={sendMessageHandler} className="bg-white border-t border-gray-200 p-2 sm:p-4">
                 <div className="flex items-center gap-2 sm:gap-3">
-                    <label
-                        htmlFor="image"
-                        className="cursor-pointer p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors active:bg-gray-200"
+                    <button
+                        type="button"
+                        onClick={triggerImageUpload}
+                        className="p-1.5 sm:p-2 hover:bg-gray-100 rounded-full transition-colors active:bg-gray-200"
                     >
                         <BiImageAdd size={isMobile ? 20 : 22} className="text-gray-500" />
-                    </label>
-                    <input type="file" hidden id="image" onChange={handleImageUpload} accept="image/*" />
+                    </button>
+                    <input
+                        type="file"
+                        id="image"
+                        ref={fileInputRef}
+                        onChange={handleImageUpload}
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                    />
 
                     <div className="flex-1 relative">
                         <input
@@ -577,11 +706,10 @@ const UserInboxs = ({
                     <button
                         type="submit"
                         disabled={!newMessage.trim()}
-                        className={`p-1.5 sm:p-2.5 rounded-full transition-all ${
-                            newMessage.trim()
+                        className={`p-1.5 sm:p-2.5 rounded-full transition-all ${newMessage.trim()
                                 ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md active:bg-blue-800"
                                 : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                        }`}
+                            }`}
                     >
                         <AiOutlineSend size={isMobile ? 18 : 20} />
                     </button>
