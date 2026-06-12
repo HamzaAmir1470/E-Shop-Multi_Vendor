@@ -10,8 +10,7 @@ const path = require('path');
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://e-shop-multi-vendor.vercel.app",
-  "https://www.e-shop-multi-vendor.vercel.app"
+  "https://sultanf.vercel.app/"
 ];
 app.use(cors({
   origin: function (origin, callback) {
@@ -22,7 +21,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    return callback(null, false); 
+    return callback(null, false);
   },
   credentials: true
 }));
@@ -35,9 +34,9 @@ app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
 
 // config
 if (process.env.NODE_ENV !== 'PRODUCTION') {
-    dotenv.config({
-        path: './config/.env'
-    });
+  dotenv.config({
+    path: './config/.env'
+  });
 }
 
 // Import routes
@@ -68,11 +67,11 @@ app.use('/api/v2/withdraw', withdraw);
 app.use(ErrorHandler);
 
 app.get("/", (req, res) => {
-    res.send("Backend API is running...");
+  res.send("Backend API is running...");
 });
 
 app.get("/health", (req, res) => {
-    res.status(200).json({ ok: true });
+  res.status(200).json({ ok: true });
 });
 
 
