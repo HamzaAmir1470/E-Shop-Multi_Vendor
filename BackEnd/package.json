@@ -6,10 +6,12 @@
   "author": "Hamza Amir",
   "type": "commonjs",
   "main": "server.js",
+  "engines" :{
+    "node": "22.x"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon server.js",
-    "build": "node server.js",
     "start": "node server.js"
   },
   "dependencies": {

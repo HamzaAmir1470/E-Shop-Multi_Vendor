@@ -22,7 +22,7 @@ app.use(cors({
       return callback(null, true);
     }
 
-    return callback(null, false); // don't crash server
+    return callback(null, false); 
   },
   credentials: true
 }));

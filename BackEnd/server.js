@@ -4,7 +4,7 @@ const dotenv = require('dotenv');
 // connfig
 if (process.env.NODE_ENV !== 'PRODUCTION') {
     dotenv.config({
-        path: './config/.env'
+        path: 'config/.env'
     });
 }
 
@@ -22,9 +22,9 @@ process.on("uncaughtException", (err) => {
 });
 
 // create server
-// const server = app.listen(process.env.PORT, () => {
-//     console.log(`Server is working on http://localhost:${process.env.PORT}`)
-// });
+const server = app.listen(process.env.PORT, () => {
+    console.log(`Server is working on http://localhost:${process.env.PORT}`)
+});
 
 // unhandled promise rejection
 process.on("unhandledRejection", (err) => {

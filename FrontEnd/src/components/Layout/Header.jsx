@@ -83,8 +83,7 @@ const Header = ({ activeHeading }) => {
   const avatarSrc = user?.avatar?.url
     ? `${backend_url}${encodeURIComponent(user.avatar.url)}`
     : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
-  
-  console.log(avatarSrc);
+
   const logoutHandler = () => {
     axios
       .get(`${server}/user/logout`, { withCredentials: true })
