@@ -62,12 +62,13 @@ app.use('/api/v2/withdraw', withdraw);
 // Error Handler
 app.use(ErrorHandler);
 
-// health check
-app.get('/test', (req, res) => {
-    res.status(200).json({
-        success: true,
-        message: 'Server is healthy'
-    });
+app.get("/", (req, res) => {
+    res.send("Backend API is running...");
 });
+
+app.get("/health", (req, res) => {
+    res.status(200).json({ ok: true });
+});
+
 
 module.exports = app;
