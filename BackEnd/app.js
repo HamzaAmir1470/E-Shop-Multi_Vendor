@@ -10,7 +10,8 @@ const path = require('path');
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://sultanf.vercel.app/"
+  "https://sultanf.vercel.app",
+  "https://sultanf-git-main-hamzaamir-designs-projects.vercel.app"
 ];
 app.use(cors({
   origin: function (origin, callback) {
