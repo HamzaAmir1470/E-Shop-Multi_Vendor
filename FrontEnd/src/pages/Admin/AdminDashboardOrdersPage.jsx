@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import AdminHeader from "../../components/Admin/Layout/AdminHeader.jsx";
-import AdminSideBar from "../../components/Admin/Layout/AdminSideBar";
+import AdminSidebar from "../../components/Admin/Layout/AdminSidebar.jsx";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllOrdersAdmin } from "../../redux/actions/order";
 import { useNavigate } from "react-router-dom";
