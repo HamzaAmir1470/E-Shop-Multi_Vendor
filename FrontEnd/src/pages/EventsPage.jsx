@@ -20,12 +20,12 @@ const EventsPage = () => {
     useEffect(() => {
         window.scrollTo(0, 0);
         fetchEvents();
-        
+
         // Optional: Set up an interval to refresh events every 30 seconds
         const interval = setInterval(() => {
             fetchEvents(true);
         }, 30000);
-        
+
         return () => clearInterval(interval);
     }, [dispatch]);
 
@@ -43,8 +43,6 @@ const EventsPage = () => {
         }
     }, [allEvents, searchTerm, selectedCategory]);
 
-    console.log('All events count:', allEvents?.length || 0);
-    console.log('All events data:', allEvents);
 
     const filterEvents = () => {
         if (!allEvents || allEvents.length === 0) {
@@ -60,7 +58,7 @@ const EventsPage = () => {
             try {
                 // Check for endDate (using endDate field from your data)
                 let eventEndDate = event.endDate || event.Finish_Date;
-                
+
                 // If no end date, assume event is still active
                 if (!eventEndDate) {
                     return true;
@@ -70,7 +68,7 @@ const EventsPage = () => {
                 const isValidDate = !isNaN(eventEndDateTime.getTime());
 
                 if (!isValidDate) return true;
-                
+
                 // Check if event is not expired
                 return eventEndDateTime >= currentDate;
             } catch (error) {
@@ -192,15 +190,6 @@ const EventsPage = () => {
                         Showing <span className="font-semibold text-orange-600">{filteredEvents.length}</span> of{' '}
                         <span className="font-semibold">{allEvents?.length || 0}</span> events
                     </p>
-                    {allEvents?.length > 0 && (
-                        <button
-                            onClick={handleRefresh}
-                            className="text-sm text-orange-600 hover:text-orange-700 flex items-center gap-1"
-                        >
-                            <FiRefreshCw size={12} />
-                            Refresh
-                        </button>
-                    )}
                 </div>
 
                 {/* Events Grid */}
@@ -226,7 +215,7 @@ const EventsPage = () => {
                         )}
                     </div>
                 ) : (
-                    <div className="space-y-12 mt-5">
+                    <div className="space-y-12 mt-5 ">
                         {filteredEvents.map((event) => (
                             <EventCard key={event._id} data={event} active={true} />
                         ))}

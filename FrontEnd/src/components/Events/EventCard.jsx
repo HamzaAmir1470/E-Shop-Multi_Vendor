@@ -91,7 +91,7 @@ const EventCard = ({ data, active = true }) => {
 
     return (
         <div
-            className={`w-full mt-5z bg-white rounded-2xl transition-all duration-300 overflow-hidden flex flex-col lg:flex-row shadow-lg hover:shadow-2xl ${active ? "mb-0" : "mb-12"}`}
+            className={`w-full mt-5 bg-white rounded-2xl transition-all duration-300 overflow-hidden flex flex-col lg:flex-row shadow-lg hover:shadow-2xl ${active ? "mb-0" : "mb-12"}`}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
         >
