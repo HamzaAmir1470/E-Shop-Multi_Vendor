@@ -1,7 +1,7 @@
 import React from 'react'
 import DashboardHeader from '../../components/Shop/Layout/DashboardHeader'
 import WithdrawMoney from "../../components/Shop/WithdrawMoney.jsx";
-import DashboardSideBar from '../../components/Shop/Layout/DashboardSideBar';
+import DashboardSideBar from '../../components/Shop/Layout/DashboardSidebar.jsx';
 
 const ShopWithDrawMoneyPage = () => {
     return (
