@@ -211,10 +211,7 @@ const Header = ({ activeHeading }) => {
                             src={imageUrl}
                             alt={item?.name || "Product"}
                             className="w-full h-full object-cover"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = "https://via.placeholder.com/150?text=No+Image";
-                            }}
+                            
                           />
                         </div>
                         <div className="flex-1">
