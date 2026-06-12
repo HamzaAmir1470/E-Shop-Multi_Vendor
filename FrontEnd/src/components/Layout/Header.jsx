@@ -124,25 +124,25 @@ const Header = ({ activeHeading }) => {
           {/* LOGO */}
           <Link to="/">
             <div className="
-  flex
-  items-center
-  gap-2
-  bg-gradient-to-r
-  from-teal-800
-  to-teal-600
-  px-4
-  py-1.5
-  rounded-xl
-  shadow-md
-  hover:shadow-teal-500/30
-  transition-all
-  duration-300
-  hover:scale-105
-  cursor-pointer
-  group
-  border
-  border-teal-400/30
-">
+              flex
+              items-center
+              gap-2
+              bg-gradient-to-r
+              from-teal-800
+              to-teal-600
+              px-4
+              py-1.5
+              rounded-xl
+              shadow-md
+              hover:shadow-teal-500/30
+              transition-all
+              duration-300
+              hover:scale-105
+              cursor-pointer
+              group
+              border
+              border-teal-400/30
+              ">
               {/* Crown icon - warm contrast */}
               <svg
                 className="w-7 h-7 text-orange-400 group-hover:rotate-12 transition-transform duration-300"
@@ -323,10 +323,6 @@ const Header = ({ activeHeading }) => {
                       src={avatarSrc}
                       alt="avatar"
                       className="w-[38px] h-[38px] rounded-full object-cover border-2 border-white shadow-md transition-transform group-hover:scale-105"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        // e.target.src = "https://via.placeholder.com/150?text=User";
-                      }}
                     />
                   </div>
                 </Link>
@@ -479,10 +475,6 @@ const Header = ({ activeHeading }) => {
                                 src={imageUrl}
                                 alt={item?.name || "Product"}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  e.target.onerror = null;
-                                  e.target.src = "https://via.placeholder.com/150?text=No+Image";
-                                }}
                               />
                             </div>
                             <div className="flex-1">
@@ -541,10 +533,7 @@ const Header = ({ activeHeading }) => {
                         src={avatarSrc}
                         alt="User"
                         className="w-[80px] h-[80px] rounded-full object-cover border-[3px] border-[#0cac88]"
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = "https://via.placeholder.com/150?text=User";
-                        }}
+                       
                       />
                     </Link>
                     <button

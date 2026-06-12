@@ -63,7 +63,7 @@ const ProfileContent = ({ active }) => {
    // Safe avatar URL with fallback
     const avatarSrc = user?.avatar?.url
       ? `${backend_url}${user.avatar.url}`
-      : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
+      : user.name;
     
 
     return (
