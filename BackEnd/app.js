@@ -5,6 +5,7 @@ const ErrorHandler = require('./middlewares/error');
 const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const cors = require('cors');
+const path = require('path');
 
 // Middlewares
 const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
