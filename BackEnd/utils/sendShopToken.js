@@ -13,6 +13,7 @@ const sendShopToken = (seller, statusCode, res) => {
     .cookie("seller_token", token, options)
     .json({
       success: true,
+      token,
       seller,
     });
 };

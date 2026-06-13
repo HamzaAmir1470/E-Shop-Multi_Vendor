@@ -12,7 +12,7 @@ exports.isAuthenticated = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler("Please login to access this resource", 401));
     }
 
-    const decoded = jwt.verify(token, process?.env.JWT_SECRET_kEY);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY);
     console.log(decoded);
     req.user = await User.findById(decoded.id);
     if (!req.user) {
@@ -28,7 +28,7 @@ exports.isSeller = catchAsyncErrors(async (req, res, next) => {
         return next(new ErrorHandler("Please login to access this resource", 401));
     }
 
-    const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_kEY);
+    const decoded = jwt.verify(seller_token, process.env.JWT_SECRET_KEY);
     req.seller = await shop.findById(decoded.id);
     if (!req.seller) {
         return next(new ErrorHandler("Seller not found", 404));

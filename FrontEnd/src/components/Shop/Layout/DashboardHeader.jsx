@@ -8,19 +8,28 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { backend_url } from "../../../server";
 
+const getAvatarUrl = (avatar) => {
+    if (!avatar) return null;
+
+    if (typeof avatar === 'string') {
+        return avatar.startsWith('http')
+            ? avatar
+            : `${backend_url}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
+    }
+
+    if (typeof avatar === 'object' && avatar.url) {
+        return avatar.url.startsWith('http')
+            ? avatar.url
+            : `${backend_url}${avatar.url.startsWith('/') ? '' : '/'}${avatar.url}`;
+    }
+
+    return null;
+};
 const DashboardHeader = () => {
     const { seller } = useSelector((state) => state.seller);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     if (!seller) return null;
-
-    // Safe avatar URL construction
-    const getAvatarUrl = () => {
-        // if (!seller?.avatar) return "/default-avatar.png";
-
-        const avatarPath = seller.avatar; 
-        return `${backend_url}${avatarPath}`;
-    };
 
     const iconClass = "mx-3 cursor-pointer text-gray-600 hover:text-green-500 transition-colors duration-200";
 
@@ -167,7 +176,7 @@ const DashboardHeader = () => {
                         <Link to={`/shop/${seller._id}`}>
                             <div className="relative">
                                 <img
-                                    src={getAvatarUrl()}
+                                    src={getAvatarUrl(seller.avatar)}
                                     alt={seller.name || "Seller Avatar"}
                                     className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-gray-200 hover:border-green-400 transition-colors duration-200"
                                     onError={(e) => {
