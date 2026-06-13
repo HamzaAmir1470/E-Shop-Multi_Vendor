@@ -121,7 +121,6 @@ router.post(
         let seller = await Shop.findOne({ email });
 
         if (seller) {
-            // ✅ Fixed helper function reference invocation to sendShopToken
             return sendShopToken(seller, 200, res);
         }
 
