@@ -38,8 +38,7 @@ build/
 *.sw?
 .vsconfig
 
-# Uploads
-uploads/
+
 
 # Local files
 *.local

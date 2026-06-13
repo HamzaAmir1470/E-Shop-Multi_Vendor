@@ -16,9 +16,9 @@ const DashboardHeader = () => {
 
     // Safe avatar URL construction
     const getAvatarUrl = () => {
-        if (!seller?.avatar) return "/default-avatar.png";
+        // if (!seller?.avatar) return "/default-avatar.png";
 
-        const avatarPath = seller.avatar.startsWith('/') ? seller.avatar : `/${seller.avatar}`;
+        const avatarPath = seller.avatar; 
         return `${backend_url}${avatarPath}`;
     };
 

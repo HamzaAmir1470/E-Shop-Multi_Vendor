@@ -7,8 +7,8 @@ const sendToken = (user, statusCode, res) => {
             Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
         ),
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'PRODUCTION',
-        sameSite: process.env.NODE_ENV === 'PRODUCTION' ? 'None' : 'Lax'
+        secure: true,
+        sameSite: "None",
     };
 
     res
@@ -17,7 +17,6 @@ const sendToken = (user, statusCode, res) => {
         .json({
             success: true,
             user,
-            token,
         });
 };
 
