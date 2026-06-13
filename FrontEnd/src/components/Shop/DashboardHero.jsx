@@ -315,7 +315,7 @@ const DashboardHero = ({ isMobile }) => {
                         linkText="Manage Products"
                         color="bg-gradient-to-r from-purple-400 to-purple-600"
                     />
-                    <motion.div
+                    {/* <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.3 }}
@@ -348,7 +348,7 @@ const DashboardHero = ({ isMobile }) => {
                             </div>
                             <p className="text-xs text-gray-500 mt-1">{completionRate.toFixed(0)}% completion rate</p>
                         </div>
-                    </motion.div>
+                    </motion.div> */}
                 </div>
             ) : (
                 // Mobile Stats Cards
