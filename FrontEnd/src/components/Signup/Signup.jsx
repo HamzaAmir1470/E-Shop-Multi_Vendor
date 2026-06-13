@@ -35,7 +35,6 @@ const Signup = () => {
         newForm.append("password", password);
         newForm.append("file", avatar);
 
-        // 1. Remove 'await' if you are using .then(), or use try/catch
         axios.post(`${server}/user/create-user`, newForm, config)
             .then((res) => {
                 toast.success(res.data.message || "Success! Please check your email.");

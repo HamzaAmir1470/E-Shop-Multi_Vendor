@@ -12,6 +12,7 @@ const sendMail = require('../utils/sendMail');
 const sendToken = require('../utils/jwtToken');
 const { isAuthenticated, isAdmin } = require('../middlewares/auth');
 
+
 router.post("/create-user", upload.single('file'), async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
@@ -19,26 +20,23 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
 
         if (userEmail) {
             if (req.file) {
-                const filename = req.file.filename;
-                const filePath = `uploads/${filename}`;
+                const filePath = path.join(__dirname, "../uploads", req.file.filename);
 
                 fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting file:", err);
-                    }
+                    if (err) console.error("Error deleting file:", err);
                 });
             }
-
             return next(new ErrorHandler("User already exists", 400));
         }
 
-
+        // 2. Validate that an avatar was actually uploaded
         if (!req.file) {
             return next(new ErrorHandler("Please upload an avatar", 400));
         }
 
         const filename = req.file.filename;
-        const fileUrl = filename;
+        const fileUrl = filename; 
+
         const user = {
             name,
             email,
@@ -48,8 +46,10 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
                 url: fileUrl,
             },
         };
+
         const activationToken = createActivationToken(user);
         const activationUrl = `https://sultanf.vercel.app/activation/${activationToken}`;
+
         try {
             await sendMail({
                 email: user.email,
