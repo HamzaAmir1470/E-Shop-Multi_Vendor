@@ -9,9 +9,7 @@ Built with scalability, authentication, responsive UI, and secure APIs in mind.
 
 ## 🚀 Live Demo
 
-🔗 **Live Preview:** *Add your deployed link here*
-🔗 **Frontend Repository:** *Add if separate*
-🔗 **Backend Repository:** *Add if separate*
+🔗 **Live Preview:** *https://sultanf.vercel.app/*
 
 ---
 
@@ -60,6 +58,7 @@ This project was developed to strengthen full-stack development skills using ind
 * Order Management
 * Upload Product Images
 * View Sales & Orders
+* Add the events for specific products
 * Manage Store Information
 
 ---
@@ -84,7 +83,6 @@ This project was developed to strengthen full-stack development skills using ind
 * React Router DOM
 * Axios
 * Tailwind CSS / CSS Modules
-* Joi Validation
 
 ## Backend
 
@@ -141,19 +139,15 @@ E-Shop-Multi_Vendor/
 
 ## 🏠 Home Page
 
-*Add screenshot here*
-
-## 🛒 Product Page
-
-*Add screenshot here*
+<img width="959" height="540" alt="Screenshot 2026-06-13 122309" src="https://github.com/user-attachments/assets/f5a0a054-a876-4817-acdc-6a12252b2b39" />
 
 ## 🏪 Vendor Dashboard
 
-*Add screenshot here*
+<img width="959" height="599" alt="Screenshot 2026-06-13 122417" src="https://github.com/user-attachments/assets/7bfcd1f1-b63e-40b8-bc0d-0ca3f61c7f8d" />
 
 ## ⚙️ Admin Dashboard
 
-*Add screenshot here*
+<img width="959" height="599" alt="Screenshot 2026-06-13 122344" src="https://github.com/user-attachments/assets/a4f37f25-4ea5-4e7f-812c-7e86f089fe44" />
 
 ---
 
