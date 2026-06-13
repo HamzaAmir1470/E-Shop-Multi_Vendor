@@ -232,13 +232,12 @@ router.get("/getuser", isAuthenticated, catchAsyncErrors(async (req, res, next) 
 // Logout User
 router.get("/logout", isAuthenticated, catchAsyncErrors(async (req, res, next) => {
     try {
-        // Use clearCookie for a clean, reliable removal
-        res.clearCookie("token", {
+        res.cookie("token", null, {
+            expires: new Date(Date.now()),
             httpOnly: true,
-            secure: true,     
-            sameSite: "none",  
+            secure: true,
+            sameSite: "none",
         });
-
         res.status(200).json({
             success: true,
             message: "Logged out successfully",
