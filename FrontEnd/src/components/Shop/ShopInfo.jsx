@@ -76,9 +76,7 @@ const ShopInfo = ({ isOwner }) => {
               src={getShopAvatarUrl(data?.avatar)}
               alt={seller?.name || "Shop Avatar"}
               className='relative w-[140px] h-[140px] object-cover rounded-full border-4 border-white shadow-2xl'
-              onError={(e) => {
-                e.currentTarget.src = 'https://via.placeholder.com/140';
-              }}
+             
             />
           </div>
           <h3 className='text-center mt-4 text-2xl font-bold text-white'>

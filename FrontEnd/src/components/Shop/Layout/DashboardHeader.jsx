@@ -179,9 +179,7 @@ const DashboardHeader = () => {
                                     src={getAvatarUrl(seller.avatar)}
                                     alt={seller.name || "Seller Avatar"}
                                     className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-gray-200 hover:border-green-400 transition-colors duration-200"
-                                    onError={(e) => {
-                                        e.target.src = "/default-avatar.png";
-                                    }}
+                                   
                                 />
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             </div>
