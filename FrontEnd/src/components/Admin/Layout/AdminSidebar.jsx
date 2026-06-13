@@ -44,7 +44,11 @@ const AdminSidebar = ({ active, isMobile = false, toggleMobileMenu }) => {
                 </div>
             )}
 
-            
+            {/* Logo/Header Section (Desktop only) */}
+            <div className="hidden lg:flex px-4 mb-6">
+                <h2 className="text-xl font-bold text-gray-800">Admin Dashboard</h2>
+            </div>
+
             {/* Menu Items */}
             <div className="w-full px-2 h-full flex flex-col justify-start">
                 {menuItems.map((item) => {

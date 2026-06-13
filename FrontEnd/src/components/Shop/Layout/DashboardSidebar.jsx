@@ -46,7 +46,7 @@ const DashboardSideBar = ({ active, isMobile = false, toggleMobileMenu }) => {
 
             {/* Logo/Header Section (Desktop only) */}
             <div className="hidden lg:flex px-4 mb-6">
-                <h2 className="text-xl font-bold text-gray-800">Dashboard</h2>
+                <h2 className="text-xl font-bold text-gray-800">Seller Dashboard</h2>
             </div>
 
             {/* Menu Items */}
