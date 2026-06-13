@@ -113,7 +113,7 @@ const AdminDashboardOrders = () => {
       <AdminHeader />
       
       <div className="flex">
-        <AdminSideBar active={2} />
+        <AdminSidebar active={2} />
         
         <div className="flex-1 overflow-x-hidden">
           {/* Main Content */}

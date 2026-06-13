@@ -92,8 +92,6 @@ const AllWithdraw = () => {
             case "succeed":
             case "success":
                 return "bg-green-100 text-green-800";
-            case "processing":
-                return "bg-yellow-100 text-yellow-800";
             case "failed":
                 return "bg-red-100 text-red-800";
             default:
@@ -106,8 +104,6 @@ const AllWithdraw = () => {
             case "succeed":
             case "success":
                 return <BsCheckCircle className="text-green-600" size={16} />;
-            case "processing":
-                return <BsClock className="text-yellow-600" size={16} />;
             case "failed":
                 return <BsXCircle className="text-red-600" size={16} />;
             default:
@@ -267,18 +263,6 @@ const AllWithdraw = () => {
                     <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-gray-500">Processing</p>
-                                <p className="text-2xl font-bold text-yellow-600">{stats.processing}</p>
-                            </div>
-                            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                                <BsClock className="text-yellow-600" size={20} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
-                        <div className="flex items-center justify-between">
-                            <div>
                                 <p className="text-sm text-gray-500">Completed</p>
                                 <p className="text-2xl font-bold text-green-600">{stats.succeed}</p>
                             </div>
@@ -325,15 +309,6 @@ const AllWithdraw = () => {
                                     }`}
                             >
                                 All
-                            </button>
-                            <button
-                                onClick={() => setStatusFilter("Processing")}
-                                className={`px-4 py-2 rounded-lg transition-all duration-200 ${statusFilter === "Processing"
-                                        ? "bg-yellow-500 text-white shadow-md"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                    }`}
-                            >
-                                Processing
                             </button>
                             <button
                                 onClick={() => setStatusFilter("Succeed")}
