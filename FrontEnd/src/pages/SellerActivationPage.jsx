@@ -14,7 +14,7 @@ const SellerActivationPage = () => {
             return;
         }
 
-        // 🔒 StrictMode-safe lock
+        // 🔒 StrictMode-safe lock (Prevents double call execution)
         const activationKey = `seller-activated-${activation_token}`;
         if (sessionStorage.getItem(activationKey)) {
             return;
@@ -24,11 +24,13 @@ const SellerActivationPage = () => {
 
         const activateSeller = async () => {
             try {
-                await axios.post(`${serverShop}/shop/activation`, {
+                // ✅ Fixed: Removed the redundant "/shop" prefix to match our clean router path
+                await axios.post(`${serverShop}/activation`, {
                     activation_token,
                 });
                 setSuccess(true);
             } catch (err) {
+                console.error("Activation failed:", err?.response?.data?.message || err.message);
                 setError(true);
             }
         };
@@ -44,15 +46,25 @@ const SellerActivationPage = () => {
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
+                backgroundColor: "#f9fafb",
+                fontFamily: "sans-serif"
             }}
         >
-            {error ? (
-                <p>Your activation link is invalid or expired!</p>
-            ) : success ? (
-                <p>Your account has been created successfully!</p>
-            ) : (
-                <p>Activating your account...</p>
-            )}
+            <div style={{ textAlign: "center", padding: "20px" }}>
+                {error ? (
+                    <p style={{ color: "#ef4444", fontSize: "1.25rem", fontWeight: "600" }}>
+                        Your activation link is invalid or expired!
+                    </p>
+                ) : success ? (
+                    <p style={{ color: "#22c55e", fontSize: "1.25rem", fontWeight: "600" }}>
+                        Your shop account has been created successfully! 🎉
+                    </p>
+                ) : (
+                    <p style={{ color: "#374151", fontSize: "1.25rem" }}>
+                        Activating your shop account, please wait...
+                    </p>
+                )}
+            </div>
         </div>
     );
 };

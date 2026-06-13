@@ -1,4 +1,3 @@
-const dotenv = require('dotenv');
 const express = require('express');
 const app = express();
 const ErrorHandler = require('./middlewares/error');
@@ -6,6 +5,14 @@ const cookieParser = require('cookie-parser');
 const bodyParser = require("body-parser");
 const cors = require('cors');
 const path = require('path');
+const dotenv = require('dotenv'); // 1. Moved Up
+
+// config - 2. Load environmental variables early
+if (process.env.NODE_ENV !== 'PRODUCTION') {
+  dotenv.config({
+    path: './config/.env'
+  });
+}
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -33,16 +40,11 @@ app.use(
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Note: You can keep this static path if you still host local files, 
+// but Cloudinary will replace the need for local uploads.
 app.use("/", express.static(path.join(__dirname, "./uploads")));
-
 app.use(bodyParser.urlencoded({ extended: true, limit: "50mb" }));
-
-// config
-if (process.env.NODE_ENV !== 'PRODUCTION') {
-  dotenv.config({
-    path: './config/.env'
-  });
-}
 
 // Import routes
 const user = require('./controllers/user');
@@ -68,9 +70,7 @@ app.use('/api/v2/conversation', conversation);
 app.use('/api/v2/message', message);
 app.use('/api/v2/withdraw', withdraw);
 
-// Error Handler
-app.use(ErrorHandler);
-
+// Base endpoints
 app.get("/", (req, res) => {
   res.send("Backend API is running...");
 });
@@ -79,5 +79,7 @@ app.get("/health", (req, res) => {
   res.status(200).json({ ok: true });
 });
 
+// Error Handler
+app.use(ErrorHandler);
 
 module.exports = app;

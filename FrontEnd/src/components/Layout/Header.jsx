@@ -79,9 +79,10 @@ const Header = ({ activeHeading }) => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Safe avatar URL with fallback
   const avatarSrc = user?.avatar?.url
-    ? `${backend_url}${encodeURIComponent(user.avatar.url)}`
+    ? user.avatar.url.startsWith("http")
+      ? user.avatar.url
+      : `${backend_url}/${user.avatar.url}`
     : "https://res.cloudinary.com/demo/image/upload/v1312461204/sample_profile.jpg";
 
   const logoutHandler = () => {
@@ -99,23 +100,43 @@ const Header = ({ activeHeading }) => {
 
   // Safe cart and wishlist counts
   const wishlistCount = wishlist?.length || 0;
-
   // Function to get correct image URL
   const getImageUrl = (product) => {
-    if (!product) return "/default-product.jpg";
+    if (!product) return null;
 
-    // Check different possible image structures
+    // 1. Check your new MERN/Cloudinary structure: product.images = [{ public_id, url }, ...]
     if (product.images && product.images[0]) {
-      return `${backend_url}${product.images[0]}`;
-    } else if (product.image_Url && product.image_Url[0]) {
-      return product.image_Url[0].url || `${backend_url}${product.image_Url[0]}`;
-    } else if (product.image && product.image[0]) {
-      return `${backend_url}${product.image[0]}`;
+      const firstImage = product.images[0];
+
+      // If it's an object containing a Cloudinary URL string
+      if (firstImage && typeof firstImage === "object" && firstImage.url) {
+        return firstImage.url.startsWith("http") ? firstImage.url : `${backend_url}/${firstImage.url}`;
+      }
+
+      // Fallback if it's a legacy array of plain string filenames
+      if (typeof firstImage === "string") {
+        return firstImage.startsWith("http") ? firstImage : `${backend_url}/${firstImage}`;
+      }
     }
 
-    return "/default-product.jpg";
-  };
+    // 2. Check legacy product.image_Url array structure
+    if (product.image_Url && product.image_Url[0]) {
+      const targetUrl = product.image_Url[0].url || product.image_Url[0];
+      if (typeof targetUrl === "string") {
+        return targetUrl.startsWith("http") ? targetUrl : `${backend_url}/${targetUrl}`;
+      }
+    }
 
+    // 3. Check legacy single image fallback array structure
+    if (product.image && product.image[0]) {
+      const legacyImage = product.image[0];
+      if (typeof legacyImage === "string") {
+        return legacyImage.startsWith("http") ? legacyImage : `${backend_url}/${legacyImage}`;
+      }
+    }
+
+    return null;
+  };
   return (
     <>
       {/* DESKTOP TOP HEADER */}
@@ -211,7 +232,7 @@ const Header = ({ activeHeading }) => {
                             src={imageUrl}
                             alt={item?.name || "Product"}
                             className="w-full h-full object-cover"
-                            
+
                           />
                         </div>
                         <div className="flex-1">
@@ -530,7 +551,7 @@ const Header = ({ activeHeading }) => {
                         src={avatarSrc}
                         alt="User"
                         className="w-[80px] h-[80px] rounded-full object-cover border-[3px] border-[#0cac88]"
-                       
+
                       />
                     </Link>
                     <button

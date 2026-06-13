@@ -1,13 +1,14 @@
 const express = require('express')
 const router = express.Router()
 const Product = require('../model/product.js')
-const { upload } = require("../multer.js")
 const catchAsyncErrors = require("../middlewares/catchAsyncErrors.js");
 const Shop = require('../model/shop.js')
 const { isSeller, isAdmin, isAuthenticated } = require("../middlewares/auth.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const Event = require('../model/event.js')
 const fs = require('fs');
+const cloudinary = require('../config/cloudinary');
+const upload = require("../multer.js")
 
 // Create Event
 
@@ -17,25 +18,53 @@ router.post('/create-event', upload.array('images'), catchAsyncErrors(async (req
 
     if (!shop) {
         return next(new ErrorHandler("Shop ID not found", 404));
-    } else {
-        const files = req.files;
-        const imageUrls = files.map((file) => `${file.filename}`);
-
-        const eventData = req.body;
-        eventData.images = imageUrls;
-        eventData.shop = shop;
-
-        const event = await Event.create(eventData);
-        res.status(201).json({
-            success: true,
-            message: "Event created successfully",
-            event,
-        });
     }
+
+    const files = req.files;
+
+    // 1. Validate if at least one image was uploaded for the event
+    if (!files || files.length === 0) {
+        return next(new ErrorHandler("Please upload at least one event image", 400));
+    }
+
+    // 2. Map through files and prepare Cloudinary upload promises
+    const imageUploadPromises = files.map(async (file) => {
+        const fileBase64 = file.buffer.toString('base64');
+        const fileDataUrl = `data:${file.mimetype};base64,${fileBase64}`;
+
+        const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+            folder: 'events', // Saves all event-related images into an 'events' folder
+        });
+
+        // Return structured object matching your Cloudinary schema
+        return {
+            public_id: cloudinaryResponse.public_id,
+            url: cloudinaryResponse.secure_url,
+        };
+    });
+
+    // 3. Resolve all uploads asynchronously in parallel
+    const imageUrls = await Promise.all(imageUploadPromises);
+
+    // 4. Structure data, clear out potential garbage frontend text data, and append shop info
+    const eventData = { ...req.body };
+
+    // CRITICAL FIX: Erase the malformed string sent by the frontend payload
+    eventData.images = imageUrls;
+    eventData.shop = shop;
+
+    // 5. Create event document in MongoDB
+    const event = await Event.create(eventData);
+
+    res.status(201).json({
+        success: true,
+        message: "Event created successfully",
+        event,
+    });
 }));
 
-// Get All Events of a Shop
 
+// Get All Events of a Shop
 router.get("/get-all-events/:id", catchAsyncErrors(async (req, res, next) => {
     try {
         const events = await Event.find({ shopId: req.params.id });

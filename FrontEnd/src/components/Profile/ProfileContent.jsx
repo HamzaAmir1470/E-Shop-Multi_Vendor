@@ -60,11 +60,12 @@ const ProfileContent = ({ active }) => {
         });
     }
 
-   // Safe avatar URL with fallback
     const avatarSrc = user?.avatar?.url
-      ? `${backend_url}${user.avatar.url}`
-      : user.name;
-    
+        ? user.avatar.url.startsWith("http")
+            ? user.avatar.url
+            : `${backend_url}/${user.avatar.url}`
+        : `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || "User")}&background=random`;
+
 
     return (
         <div className="w-full px-5 pt-10 md:pt-0 md:pl-10">

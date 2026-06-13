@@ -28,16 +28,22 @@ const CreateEvent = () => {
     const [isDragging, setIsDragging] = useState(false);
 
     const handleStartDateChange = (e) => {
-        const startDate = new Date(e.target.value);
-        const minEndDate = new Date(startDate.getTime() + 3 * 24 * 60 * 60 * 1000);
-        setStartDate(startDate);
+        if (!e.target.value) {
+            setStartDate(null);
+            return;
+        }
+        const start = new Date(e.target.value);
+        setStartDate(start);
         setEndDate(null);
-        document.getElementById("end-date").min = minEndDate.toISOString().slice(0, 10);
     };
 
     const handleEndDateChange = (e) => {
-        const endDate = new Date(e.target.value);
-        setEndDate(endDate);
+        if (!e.target.value) {
+            setEndDate(null);
+            return;
+        }
+        const end = new Date(e.target.value);
+        setEndDate(end);
     };
 
     const today = new Date().toISOString().slice(0, 10);
@@ -61,7 +67,6 @@ const CreateEvent = () => {
     }, [error, success, submitted, dispatch, navigate]);
 
     useEffect(() => {
-        // Cleanup preview URLs
         return () => {
             imagePreviews.forEach((url) => URL.revokeObjectURL(url));
         };
@@ -83,7 +88,7 @@ const CreateEvent = () => {
 
     const validateImage = (file) => {
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
 
         if (!validTypes.includes(file.type)) {
             toast.error(`Invalid file type: ${file.name}. Please upload JPEG, PNG, GIF, or WEBP images.`);
@@ -101,31 +106,24 @@ const CreateEvent = () => {
     const handleImageChange = (e) => {
         e.preventDefault();
         let files = Array.from(e.target.files);
-
-        // Filter valid images
         const validFiles = files.filter(validateImage);
 
         if (validFiles.length === 0) return;
 
-        // Check total images limit (max 10)
         if (images.length + validFiles.length > 10) {
             toast.error("Maximum 10 images allowed per event");
             return;
         }
 
-        // Create preview URLs
         const newPreviews = validFiles.map(file => URL.createObjectURL(file));
 
         setImages([...images, ...validFiles]);
         setImagePreviews([...imagePreviews, ...newPreviews]);
-
         toast.success(`${validFiles.length} image(s) added successfully`);
     };
 
     const removeImage = (index) => {
-        // Revoke the object URL to avoid memory leaks
         URL.revokeObjectURL(imagePreviews[index]);
-
         const newImages = images.filter((_, i) => i !== index);
         const newPreviews = imagePreviews.filter((_, i) => i !== index);
 
@@ -237,24 +235,25 @@ const CreateEvent = () => {
         newForm.append("discountPrice", discountPrice);
         newForm.append("stock", stock);
         newForm.append("shopId", seller._id);
+
+        // Fix: Use the state instance directly to convert without breaking state types
         newForm.append("startDate", startDate.toISOString());
         newForm.append("endDate", endDate.toISOString());
 
         dispatch(createevent(newForm));
     };
 
-    // Calculate discount percentage
-    const discountPercentage = originalPrice && discountPrice && originalPrice > discountPrice
-        ? Math.round(((originalPrice - discountPrice) / originalPrice) * 100)
+    const discountPercentage = originalPrice && discountPrice && parseFloat(originalPrice) > parseFloat(discountPrice)
+        ? Math.round(((parseFloat(originalPrice) - parseFloat(discountPrice)) / parseFloat(originalPrice)) * 100)
         : 0;
 
     return (
-      <div className="flex-1 min-w-0 min-h-screen bg-gray-50 px-2 md:px-4 lg:px-6 py-4">
-            <div className="w-full max-w-5xl ">
+        <div className="flex-1 min-w-0 min-h-screen bg-gray-50 px-2 md:px-4 lg:px-6 py-4">
+            <div className="w-full max-w-5xl">
                 <div className="bg-white shadow-xl rounded-xl overflow-hidden">
 
                     {/* Header */}
-                    <div className="px-5 py-4 bg-blue-600 md:px-6 md:py-5 border-b  border-gray-200">
+                    <div className="px-5 py-4 bg-blue-600 md:px-6 md:py-5 border-b border-gray-200">
                         <h5 className="text-xl md:text-2xl font-semibold text-white">
                             Create New Event
                         </h5>
@@ -362,7 +361,7 @@ const CreateEvent = () => {
                             {discountPercentage > 0 && (
                                 <div className="bg-green-50 border border-green-200 rounded-lg p-2.5">
                                     <p className="text-sm text-green-700">
-                                        🎉 Customer saves <span className="font-bold">{discountPercentage}%</span> (${(originalPrice - discountPrice).toFixed(2)} off)
+                                        🎉 Customer saves <span className="font-bold">{discountPercentage}%</span> (${(parseFloat(originalPrice) - parseFloat(discountPrice)).toFixed(2)} off)
                                     </p>
                                 </div>
                             )}
@@ -410,7 +409,7 @@ const CreateEvent = () => {
                                     </label>
                                     <input
                                         type="date"
-                                        value={startDate ? startDate.toISOString().slice(0, 10) : ""}
+                                        value={startDate instanceof Date ? startDate.toISOString().slice(0, 10) : ""}
                                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                         onChange={handleStartDateChange}
                                         min={today}
@@ -425,7 +424,7 @@ const CreateEvent = () => {
                                     <input
                                         type="date"
                                         id="end-date"
-                                        value={endDate ? endDate.toISOString().slice(0, 10) : ""}
+                                        value={endDate instanceof Date ? endDate.toISOString().slice(0, 10) : ""}
                                         className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
                                         onChange={handleEndDateChange}
                                         min={minEndDate}
@@ -434,7 +433,7 @@ const CreateEvent = () => {
                                 </div>
                             </div>
 
-                            {startDate && endDate && (
+                            {startDate instanceof Date && endDate instanceof Date && (
                                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-2.5">
                                     <p className="text-sm text-blue-700">
                                         📅 Event duration: {Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24))} days
@@ -452,8 +451,8 @@ const CreateEvent = () => {
 
                             <div
                                 className={`border-2 border-dashed rounded-lg p-6 transition-all duration-200 ${isDragging
-                                        ? 'border-blue-500 bg-blue-50'
-                                        : 'border-gray-300 hover:border-blue-400 bg-gray-50'
+                                    ? 'border-blue-500 bg-blue-50'
+                                    : 'border-gray-300 hover:border-blue-400 bg-gray-50'
                                     }`}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}

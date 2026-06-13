@@ -144,10 +144,13 @@ const CartItem = ({ data, quantityChangeHandler, removeFromCart }) => {
         </button>
       </div>
 
-      {/* IMAGE - Smaller on mobile */}
       <img
-        src={`${backend_url}/${data?.images?.[0] || ''}`}
-        alt="Product"
+        src={
+          data?.images?.[0]?.url
+            ? data.images[0].url                                
+            : `${backend_url}/${data?.images?.[0] || ''}`      
+        }
+        alt={data?.name || "Product"}
         className="w-[60px] sm:w-[80px] h-[60px] sm:h-[80px] rounded-lg object-cover shadow-sm"
       />
 

@@ -3,7 +3,7 @@ import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import styles from "../../styles/styles";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import axios from "axios"
+import axios from "axios";
 import { server } from "../../server";
 import { RxAvatar } from "react-icons/rx";
 
@@ -20,14 +20,20 @@ const ShopCreate = () => {
     const navigate = useNavigate();
 
     const handlefileInputChange = (e) => {
-
         const file = e.target.files[0];
-        setAvatar(file);
-        setPreview(URL.createObjectURL(file));
-    }
+        if (file) {
+            setAvatar(file);
+            setPreview(URL.createObjectURL(file));
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        if (!avatar) {
+            return toast.error("Please upload a shop profile picture logo!");
+        }
+
         const config = { headers: { "Content-Type": "multipart/form-data" } };
         const newForm = new FormData();
 
@@ -39,10 +45,11 @@ const ShopCreate = () => {
         newForm.append("zipCode", zipCode);
         newForm.append("file", avatar);
 
-        // 1. Remove 'await' if you are using .then(), or use try/catch
+        // Standardized request to match our clean single-prefix backend routes
         axios.post(`${server}/shop/create-shop`, newForm, config)
             .then((res) => {
-                toast.success(res.data.message || "Success! Please check your email.");
+                // Read alerts or success messages returned from backend
+                toast.success(res.data.alert || res.data.message || "Success! Check your email.");
                 setName("");
                 setEmail("");
                 setPassword("");
@@ -53,11 +60,12 @@ const ShopCreate = () => {
                 setPreview(null);
             })
             .catch((err) => {
-                console.log(err.response.data.message);
-                toast.error(err.response.data.message);
+                // ✅ Fixed: Added fallback optional-chaining to prevent frontend interface crashes
+                const errorMessage = err?.response?.data?.message || err?.message || "Something went wrong";
+                console.error("Shop registration failed:", errorMessage);
+                toast.error(errorMessage);
             });
     };
-
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -70,15 +78,12 @@ const ShopCreate = () => {
                 <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
                     <form className="space-y-6" onSubmit={handleSubmit}>
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                                 Shop Name
                             </label>
                             <div className="mt-1">
                                 <input
-                                    type="name"
+                                    type="text"
                                     name="name"
                                     required
                                     value={name}
@@ -87,11 +92,9 @@ const ShopCreate = () => {
                                 />
                             </div>
                         </div>
+
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                                 Email Address
                             </label>
                             <div className="mt-1">
@@ -106,11 +109,9 @@ const ShopCreate = () => {
                                 />
                             </div>
                         </div>
+
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">
                                 Phone Number
                             </label>
                             <div className="mt-1">
@@ -125,16 +126,14 @@ const ShopCreate = () => {
                                 />
                             </div>
                         </div>
+
                         <div>
-                            <label
-                                htmlFor="email"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="address" className="block text-sm font-medium text-gray-700">
                                 Permanent Address
                             </label>
                             <div className="mt-1">
                                 <input
-                                    type="address"
+                                    type="text"
                                     name="address"
                                     required
                                     value={address}
@@ -143,11 +142,9 @@ const ShopCreate = () => {
                                 />
                             </div>
                         </div>
+
                         <div>
-                            <label
-                                htmlFor="zipCode"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700">
                                 Zip Code
                             </label>
                             <div className="mt-1">
@@ -162,11 +159,9 @@ const ShopCreate = () => {
                                 />
                             </div>
                         </div>
+
                         <div>
-                            <label
-                                htmlFor="password"
-                                className="block text-sm font-medium text-gray-700"
-                            >
+                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                                 Password
                             </label>
                             <div className="mt-1 relative">
@@ -193,50 +188,49 @@ const ShopCreate = () => {
                                     />
                                 )}
                             </div>
-                            <div className="mt-5">
-                                {/* <label className="block text-sm font-medium text-gray-700">
-                                    Shop Profile Picture
-                                </label> */}
-                                <div className="mt-2 flex items-center">
-                                    <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
-                                        {preview ? (
-                                            <img
-                                                src={preview}
-                                                alt="avatar"
-                                                className="h-full w-full object-cover rounded-full"
-                                            />
-                                        ) : (
-                                            <RxAvatar className="h-8 w-8" />
-                                        )}
-                                    </span>
-                                    <label
-                                        htmlFor="file-input"
-                                        className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-                                    >
-                                        <span>Upload a file</span>
-                                        <input
-                                            type="file"
-                                            id="file-input"
-                                            accept=".jpg,.jpeg,.png"
-                                            onChange={handlefileInputChange}
-                                            className="sr-only"
+                        </div>
+
+                        <div>
+                            <div className="mt-2 flex items-center">
+                                <span className="inline-block h-8 w-8 rounded-full overflow-hidden">
+                                    {preview ? (
+                                        <img
+                                            src={preview}
+                                            alt="avatar"
+                                            className="h-full w-full object-cover rounded-full"
                                         />
-                                    </label>
-                                </div>
+                                    ) : (
+                                        <RxAvatar className="h-8 w-8 text-gray-400" />
+                                    )}
+                                </span>
+                                <label
+                                    htmlFor="file-input"
+                                    className="ml-5 flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+                                >
+                                    <span>Upload a file</span>
+                                    <input
+                                        type="file"
+                                        id="file-input"
+                                        name="file"
+                                        accept=".jpg,.jpeg,.png"
+                                        onChange={handlefileInputChange}
+                                        className="sr-only"
+                                    />
+                                </label>
                             </div>
                         </div>
 
                         <div>
                             <button
                                 type="submit"
-                                className="group relative w-full h-40px flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                                className="group relative w-full h-[40px] flex justify-center items-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                             >
                                 Submit
                             </button>
                         </div>
-                        <div className={`${styles.normalFlex} w-full`}>
-                            <h4>Already have an account?</h4>
-                            <Link to="/shop-login" className="text-blue-600 pl-2">
+                        <div className={`${styles.normalFlex} w-full justify-center`}>
+                            <h4 className="text-gray-600">Already have an account?</h4>
+                            <Link to="/shop-login" className="text-blue-600 pl-2 hover:underline">
                                 Sign In
                             </Link>
                         </div>
@@ -244,7 +238,7 @@ const ShopCreate = () => {
                 </div>
             </div>
         </div>
-    )
-}
+    );
+};
 
 export default ShopCreate;

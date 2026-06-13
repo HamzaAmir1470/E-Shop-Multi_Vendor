@@ -659,7 +659,11 @@ const CartData = ({
                     return (
                         <div key={index} className="flex items-center gap-3 text-sm">
                             <img
-                                src={`${backend_url}/${item.images?.[0] || ''}`}
+                                src={
+                                    item.images?.[0]?.url
+                                        ? item.images[0].url                              
+                                        : `${backend_url}/${item.images?.[0] || ''}`      
+                                }
                                 alt={item.name}
                                 className="w-12 h-12 object-cover rounded"
                             />

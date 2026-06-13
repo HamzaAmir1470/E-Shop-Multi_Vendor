@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const router = express.Router();
 const User = require('../model/user');
-const { upload } = require('../multer');
+const upload = require('../multer');
 const ErrorHandler = require('../utils/ErrorHandler');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
@@ -11,39 +11,35 @@ const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const sendMail = require('../utils/sendMail');
 const sendToken = require('../utils/jwtToken');
 const { isAuthenticated, isAdmin } = require('../middlewares/auth');
-
+const cloudinary = require('../config/cloudinary'); // Ensure this path matches your setup
 
 router.post("/create-user", upload.single('file'), async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
+
         const userEmail = await User.findOne({ email });
-
         if (userEmail) {
-            if (req.file) {
-                const filePath = path.join(__dirname, "../uploads", req.file.filename);
-
-                fs.unlink(filePath, (err) => {
-                    if (err) console.error("Error deleting file:", err);
-                });
-            }
             return next(new ErrorHandler("User already exists", 400));
         }
 
-        // 2. Validate that an avatar was actually uploaded
         if (!req.file) {
             return next(new ErrorHandler("Please upload an avatar", 400));
         }
 
-        const filename = req.file.filename;
-        const fileUrl = filename; 
+        const fileBase64 = req.file.buffer.toString('base64');
+        const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+        const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+            folder: 'avatars', 
+        });
 
         const user = {
             name,
             email,
             password,
             avatar: {
-                public_id: filename,
-                url: fileUrl,
+                public_id: cloudinaryResponse.public_id,
+                url: cloudinaryResponse.secure_url, // This is the accessible https link
             },
         };
 

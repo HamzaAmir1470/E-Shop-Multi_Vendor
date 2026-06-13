@@ -33,9 +33,7 @@ const ReviewsModal = ({ reviews, onClose }) => {
     const [visible, setVisible] = useState(false)
 
     useEffect(() => {
-        // Prevent body scroll when modal is open
         document.body.style.overflow = 'hidden'
-        // show enter animation
         const t = setTimeout(() => setVisible(true), 10)
         return () => {
             clearTimeout(t)
@@ -44,7 +42,6 @@ const ReviewsModal = ({ reviews, onClose }) => {
     }, [])
 
     const handleClose = () => {
-        // play exit animation then call onClose
         setVisible(false)
         setTimeout(() => onClose && onClose(), 220)
     }
@@ -68,7 +65,13 @@ const ReviewsModal = ({ reviews, onClose }) => {
                     <div className="overflow-y-auto mt-4 space-y-4 max-h-[calc(80vh-80px)]">
                         {reviews.map((review, index) => (
                             <div key={review._id || index} className="flex items-start p-4 bg-gray-50 rounded-xl">
-                                <img src={getUserAvatarUrl(review.user || review)} alt={review.user?.name || review.name} className='w-12 h-12 rounded-full object-cover mr-4' onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }} />
+                                {/* 🛠️ Fix 1: Reviewer Avatar resolution */}
+                                <img
+                                    src={getUserAvatarUrl(review?.user || review)}
+                                    alt={review.user?.name || review.name}
+                                    className='w-12 h-12 rounded-full object-cover mr-4'
+                                    onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }}
+                                />
                                 <div className="flex-1">
                                     <div className="flex items-center justify-between mb-1">
                                         <h5 className='font-semibold text-gray-800'>{review.user?.name || review.name}</h5>
@@ -121,7 +124,6 @@ const ProductDetails = ({ data }) => {
         }
 
         let cancelled = false
-
         const loadShopInfo = async () => {
             try {
                 const res = await axios.get(`${server}/shop/get-shop-info/${shopId}`)
@@ -134,12 +136,8 @@ const ProductDetails = ({ data }) => {
                 }
             }
         }
-
         loadShopInfo()
-
-        return () => {
-            cancelled = true
-        }
+        return () => { cancelled = true }
     }, [data?.shop, shopId])
 
     const shop = shopInfo || data?.shop
@@ -158,35 +156,18 @@ const ProductDetails = ({ data }) => {
 
     const handleAddToCart = (e, id) => {
         e?.stopPropagation()
-
         const isItemExist = cart?.find((item) => item._id === id)
         if (isItemExist) {
             toast.error('Item already in cart!')
             return
         }
-
         if (data.stock < count) {
             toast.error(`Only ${data.stock} items available!`)
             return
         }
-
         const cartData = { ...data, qty: count }
         dispatch(addToCart(cartData))
         toast.success(`Added ${count} item(s) to cart!`)
-    }
-
-    const addToWishlistHandler = (e, data) => {
-        e?.stopPropagation()
-        setClick(true)
-        dispatch(addToWishlist(data))
-        toast.success('Item added to wishlist!')
-    }
-
-    const removeFromWishlistHandler = (e, data) => {
-        e?.stopPropagation()
-        setClick(false)
-        dispatch(removeFromWishlist(data))
-        toast.success('Item removed from wishlist!')
     }
 
     const toggleWishlistHandler = (e, data) => {
@@ -202,15 +183,8 @@ const ProductDetails = ({ data }) => {
         }
     }
 
-    const decrease = (e) => {
-        e?.stopPropagation()
-        setCount((prev) => (prev > 1 ? prev - 1 : 1))
-    }
-
-    const increase = (e) => {
-        e?.stopPropagation()
-        setCount((prev) => prev + 1)
-    }
+    const decrease = (e) => { e?.stopPropagation(); setCount((prev) => (prev > 1 ? prev - 1 : 1)) }
+    const increase = (e) => { e?.stopPropagation(); setCount((prev) => prev + 1) }
 
     const handleMessageSubmit = async (e) => {
         e?.stopPropagation()
@@ -220,18 +194,14 @@ const ProductDetails = ({ data }) => {
             const sellerId = data.shop._id;
 
             await axios.post(`${server}/conversation/create-new-conversation`, {
-                groupTitle,
-                userId,
-                sellerId
-            },{withCredentials: true}).then((res) => {
-                console.log(res)
+                groupTitle, userId, sellerId
+            }, { withCredentials: true }).then((res) => {
                 if (res.data.success) {
                     navigate(`/conversation/${res.data?.conversation._id}`)
                 }
             }).catch((error) => {
                 toast.error(error.response?.data?.message || 'Failed to create conversation')
             })
-
         } else {
             navigate('/login')
         }
@@ -245,6 +215,13 @@ const ProductDetails = ({ data }) => {
         )
     }
 
+    // Determine the current primary image source URL
+    const activeImageObject = data.images?.[select] || data.images?.[0];
+    const mainImageUrl = activeImageObject?.url || (typeof activeImageObject === 'string' ? `${backend_url}${activeImageObject}` : '');
+
+    // Determine shop avatar image source URL 
+    const shopAvatarUrl = shop?.avatar?.url || (typeof shop?.avatar === 'string' ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56');
+
     return (
         <div className="bg-white">
             {data && (
@@ -257,7 +234,12 @@ const ProductDetails = ({ data }) => {
                                     <div className="absolute inset-0 bg-white/40 backdrop-blur-sm" />
                                     <div className="absolute inset-0 bg-gradient-to-r from-blue-200/50 via-purple-200/50 to-pink-200/50 animate-pulse" />
                                     <div className="relative z-10 bg-white/30 backdrop-blur-md rounded-xl p-4 shadow-2xl">
-                                        <img src={data.images?.[select] ? `${backend_url}${data.images[select]}` : `${backend_url}${data.images?.[0]}`} alt={data.name} className="w-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-105" />
+                                        {/* 🛠️ Fix 2: Main Featured Display Image */}
+                                        <img
+                                            src={mainImageUrl}
+                                            alt={data.name}
+                                            className="w-full object-contain drop-shadow-2xl transition-transform duration-500 group-hover:scale-105"
+                                        />
                                     </div>
                                     <div className="absolute top-0 left-0 w-32 h-32 bg-white/30 rounded-full blur-3xl" />
                                     <div className="absolute bottom-0 right-0 w-40 h-40 bg-purple-200/30 rounded-full blur-3xl" />
@@ -266,11 +248,15 @@ const ProductDetails = ({ data }) => {
 
                             {data.images && data.images.length > 0 && (
                                 <div className="mt-6 ml-25 grid grid-cols-4 sm:grid-cols-6 gap-3">
-                                    {data.images.map((img, i) => (
-                                        <div key={i} className={`cursor-pointer p-1 rounded-lg border transition-all duration-300 transform ${select === i ? 'border-indigo-600 bg-indigo-50 shadow-lg scale-105' : 'border-gray-200 hover:border-indigo-300 hover:shadow-sm'}`} onClick={(e) => { e.stopPropagation(); setSelect(i) }}>
-                                            <img src={`${backend_url}${img}`} className="h-20 w-20 object-cover rounded-md" alt={`${data.name} thumbnail ${i + 1}`} />
-                                        </div>
-                                    ))}
+                                    {data.images.map((img, i) => {
+                                        // 🛠️ Fix 3: Lower Thumbnails Loop Resolution
+                                        const thumbnailUrl = img?.url || (typeof img === 'string' ? `${backend_url}${img}` : '');
+                                        return (
+                                            <div key={i} className={`cursor-pointer p-1 rounded-lg border transition-all duration-300 transform ${select === i ? 'border-indigo-600 bg-indigo-50 shadow-lg scale-105' : 'border-gray-200 hover:border-indigo-300 hover:shadow-sm'}`} onClick={(e) => { e.stopPropagation(); setSelect(i) }}>
+                                                <img src={thumbnailUrl} className="h-20 w-20 object-cover rounded-md" alt={`${data.name} thumbnail ${i + 1}`} />
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
@@ -306,7 +292,8 @@ const ProductDetails = ({ data }) => {
                             <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 p-4 rounded-lg ${styles.card}`}>
                                 <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                                        <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} />
+                                        {/* 🛠️ Fix 4: Seller Card Avatar */}
+                                        <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
                                         <div>
                                             <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                             <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>
@@ -337,8 +324,10 @@ const ProductDetailsInfo = ({ data, products, shop }) => {
     const reviews = data?.reviews || []
     const hasMoreThanTwo = reviews.length > 2
     const displayedReviews = hasMoreThanTwo ? reviews.slice(0, 2) : reviews
-
     const avgRating = data?.reviews && data.reviews.length > 0 ? (data.reviews.reduce((acc, r) => acc + (r.rating || r.ratings || 0), 0) / data.reviews.length).toFixed(1) : null
+
+    // Determine shop avatar image source URL for the tab section
+    const shopAvatarUrl = shop?.avatar?.url || (typeof shop?.avatar === 'string' ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56');
 
     return (
         <div className="bg-[#f5f6fb] px-3 800px:px-10 py-2 rounded mx-15 mt-10">
@@ -390,7 +379,13 @@ const ProductDetailsInfo = ({ data, products, shop }) => {
                             <div className='space-y-4'>
                                 {displayedReviews.map((review, index) => (
                                     <div key={review._id || index} className='w-full flex items-start p-4 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-100'>
-                                        <img src={review?.user || review} alt={review.user?.name || review.name} className='w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-gray-100' onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }} />
+                                        {/* 🛠Header Fix 5: Review Tab User Avatar layout */}
+                                        <img
+                                            src={getUserAvatarUrl(review?.user || review)}
+                                            alt={review.user?.name || review.name}
+                                            className='w-12 h-12 rounded-full object-cover mr-4 ring-2 ring-gray-100'
+                                            onError={(e) => { e.target.src = `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(review.user?.name || review.name || 'User')}` }}
+                                        />
                                         <div className='flex-1'>
                                             <div className='flex items-center justify-between mb-1'>
                                                 <h5 className='font-semibold text-gray-800'>{review.user?.name || review.name}</h5>
@@ -432,7 +427,8 @@ const ProductDetailsInfo = ({ data, products, shop }) => {
                     <div className="space-y-4">
                         <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                                <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                {/* 🛠️ Fix 6: Seller Tab Information Block Avatar */}
+                                <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
                                 <div>
                                     <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                     <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>

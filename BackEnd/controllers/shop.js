@@ -10,59 +10,71 @@ const sendToken = require('../utils/jwtToken');
 const { isAuthenticated, isSeller, isAdmin } = require('../middlewares/auth');
 const ErrorHandler = require('../utils/ErrorHandler');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
-const { upload } = require('../multer');
+const upload = require('../multer');
 const sendShopToken = require('../utils/sendShopToken');
+const cloudinary = require('../config/cloudinary');
 
+// create activation token
+const createActivationToken = (seller) => {
+    return jwt.sign(seller, process.env.ACTIVATION_SECRET, {
+        expiresIn: '15h',
+    });
+};
 
+const createResetPasswordToken = () => {
+    return crypto.randomBytes(20).toString("hex");
+};
+
+// --- CREATE SHOP REGISTRATION ---
 router.post('/create-shop', upload.single('file'), async (req, res, next) => {
     try {
-        const { email } = req.body;
+        const { name, email, password, phoneNumber, address, description, zipCode } = req.body;
+
         const sellerEmail = await Shop.findOne({ email });
         if (sellerEmail) {
-            if (req.file) {
-                const filename = req.file.filename;
-                const filePath = `uploads/${filename}`;
-
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting file:", err);
-                    }
-                });
-            }
-
-            return next(new ErrorHandler("User already exists", 400));
+            return next(new ErrorHandler("Shop already exists with this email", 400));
         }
-
 
         if (!req.file) {
-            return next(new ErrorHandler("Please upload an avatar", 400));
+            return next(new ErrorHandler("Please upload a shop avatar", 400));
         }
-        const filename = req.file.filename;
-        const fileUrl = path.join(filename);
 
-        const seller = {
-            name: req.body.name,
-            email: req.body.email,
-            password: req.body.password,
-            avatar: fileUrl,
-            phoneNumber: req.body.phoneNumber,
-            address: req.body.address,
-            description: req.body.description,
-            zipCode: req.body.zipCode,
+        // Convert memory buffer to Base64 URI string for Cloudinary
+        const fileBase64 = req.file.buffer.toString('base64');
+        const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+        const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+            folder: 'shops',
+        });
+
+        // Store flat fields to optimize JWT URL lengths
+        const sellerData = {
+            name,
+            email,
+            password,
+            phoneNumber,
+            address,
+            description,
+            zipCode,
+            avatarId: cloudinaryResponse.public_id,
+            avatarUrl: cloudinaryResponse.secure_url,
         };
 
-        const activationToken = createActivationToken(seller);
+        const activationToken = createActivationToken(sellerData);
+
+        // Dev URI context string. Update this to your deployed domain for production releases
         const activationUrl = `https://sultanf.vercel.app/seller/activation/${activationToken}`;
+
         try {
             await sendMail({
-                email: seller.email,
+                email: sellerData.email,
                 subject: "Activate your shop account",
-                message: `Hello ${seller.name}, please click here to activate your shop: ${activationUrl}`,
+                message: `Hello ${sellerData.name},\n\nPlease click here to activate your shop: ${activationUrl}`,
             });
 
             res.status(201).json({
                 success: true,
-                alert: `Please check your email: ${seller.email} to activate your account!`,
+                alert: `Please check your email: ${sellerData.email} to activate your account!`,
             });
 
         } catch (error) {
@@ -74,20 +86,9 @@ router.post('/create-shop', upload.single('file'), async (req, res, next) => {
     }
 });
 
-// create activation token
-const createActivationToken = (seller) => {
-    return jwt.sign(seller, process.env.ACTIVATION_SECRET, {
-        expiresIn: '15hrs',
-    });
-};
-
-const createResetPasswordToken = () => {
-    return crypto.randomBytes(20).toString("hex");
-};
-
-// activate shop account
+// --- ACTIVATE SHOP ACCOUNT ---
 router.post(
-    "/shop/activation",
+    "/activation",
     catchAsyncErrors(async (req, res, next) => {
         const { activation_token } = req.body;
 
@@ -109,18 +110,22 @@ router.post(
             name,
             email,
             password,
-            avatar,
             zipCode,
             address,
             phoneNumber,
+            description,
+            avatarId,
+            avatarUrl
         } = decoded;
 
         let seller = await Shop.findOne({ email });
 
         if (seller) {
-            return sendToken(seller, 200, res);
+            // ✅ Fixed helper function reference invocation to sendShopToken
+            return sendShopToken(seller, 200, res);
         }
 
+        // Map fields back into structural Object documents
         seller = await Shop.create({
             name,
             email,
@@ -128,21 +133,17 @@ router.post(
             zipCode,
             address,
             phoneNumber,
-            avatar,
+            description,
+            avatar: {
+                public_id: avatarId,
+                url: avatarUrl
+            },
         });
 
         sendMail({
             email: seller.email,
             subject: "Shop Account Activated Successfully",
-            message: `Hello ${seller.name},
-
-            Your shop account has been activated successfully 🎉
-
-            You can now log in and start selling on our platform.
-            If you did not perform this action, please contact support immediately.
-
-            Regards,
-            Team`,
+            message: `Hello ${seller.name},\n\nYour shop account has been activated successfully 🎉\n\nYou can now log in and start selling on our platform.\n\nRegards,\nTeam`,
         }).catch(err =>
             console.error("Activation email failed:", err.message)
         );
@@ -151,7 +152,7 @@ router.post(
     })
 );
 
-// Login Shop
+// --- LOGIN SHOP ---
 router.post("/login-shop", catchAsyncErrors(async (req, res, next) => {
     try {
         const { email, password } = req.body;
@@ -176,7 +177,7 @@ router.post("/login-shop", catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
-// Forgot password
+// --- FORGOT PASSWORD ---
 router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
     try {
         const { email } = req.body;
@@ -216,7 +217,7 @@ router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
-// Reset password
+// --- RESET PASSWORD ---
 router.put("/reset-password/:token", catchAsyncErrors(async (req, res, next) => {
     try {
         const { token } = req.params;
@@ -247,13 +248,13 @@ router.put("/reset-password/:token", catchAsyncErrors(async (req, res, next) => 
 
         await seller.save();
 
-        sendToken(seller, 200, res);
+        sendShopToken(seller, 200, res);
     } catch (error) {
         return next(new ErrorHandler(error.message, 500));
     }
 }));
 
-// Load Shop User 
+// --- GET SELLER PROFILE ---
 router.get("/getSeller", isSeller, catchAsyncErrors(async (req, res, next) => {
     try {
         const seller = await Shop.findById(req.seller._id);
@@ -269,7 +270,7 @@ router.get("/getSeller", isSeller, catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
-// Logout Shop User
+// --- LOGOUT SHOP ---
 router.get("/logout", isSeller, catchAsyncErrors(async (req, res, next) => {
     try {
         res.cookie("seller_token", null, {
@@ -287,6 +288,7 @@ router.get("/logout", isSeller, catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
+// --- GET PUBLIC SHOP INFO ---
 router.get("/get-shop-info/:id", catchAsyncErrors(async (req, res, next) => {
     try {
         const shop = await Shop.findById(req.params.id);
@@ -303,41 +305,45 @@ router.get("/get-shop-info/:id", catchAsyncErrors(async (req, res, next) => {
     }
 }));
 
+// --- UPDATE SHOP AVATAR ---
 router.put(
     "/update-shop-avatar",
     isSeller,
-    upload.single("image"),
+    upload.single("image"), // Keeps field mapping naming consistent
     catchAsyncErrors(async (req, res, next) => {
         try {
             const seller = await Shop.findById(req.seller._id);
 
             if (!seller) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Seller not found",
-                });
+                return next(new ErrorHandler("Seller not found", 404));
             }
 
             if (!req.file) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Please upload an avatar",
-                });
+                return next(new ErrorHandler("Please upload an avatar image", 400));
             }
 
-            const existAvatarPath = `uploads/${seller.avatar}`;
-
-            if (fs.existsSync(existAvatarPath)) {
-                fs.unlinkSync(existAvatarPath);
+            // ✅ Cleaned up Cloudinary integrations (removes local file system path errors)
+            if (seller.avatar && seller.avatar.public_id) {
+                await cloudinary.uploader.destroy(seller.avatar.public_id);
             }
+
+            const fileBase64 = req.file.buffer.toString('base64');
+            const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+            const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+                folder: 'shops',
+            });
 
             const shop = await Shop.findByIdAndUpdate(
                 req.seller._id,
-                { avatar: req.file.filename },
+                {
+                    avatar: {
+                        public_id: cloudinaryResponse.public_id,
+                        url: cloudinaryResponse.secure_url
+                    }
+                },
                 { new: true }
             );
-
-            console.log("Saved avatar:", req.file.filename);
 
             res.status(200).json({
                 success: true,
@@ -349,7 +355,7 @@ router.put(
     })
 );
 
-// update shop information
+// --- UPDATE SHOP INFORMATION ---
 router.put(
     "/update-shop-info",
     isSeller,
@@ -373,7 +379,7 @@ router.put(
     })
 );
 
-// get all shops
+// --- GET ALL SHOPS (ADMIN) ---
 router.get(
     "/admin-all-sellers",
     isAuthenticated,
@@ -394,7 +400,7 @@ router.get(
     })
 );
 
-// delete seller -- admin
+// --- DELETE SHOP (ADMIN) ---
 router.delete(
     "/admin-delete-seller/:id",
     isAuthenticated,
@@ -403,11 +409,14 @@ router.delete(
         try {
             const shop = await Shop.findById(req.params.id);
             if (!shop) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Shop not found",
-                });
+                return next(new ErrorHandler("Shop not found", 404));
             }
+
+            // Delete image content from Cloudinary buckets if it exists
+            if (shop.avatar && shop.avatar.public_id) {
+                await cloudinary.uploader.destroy(shop.avatar.public_id);
+            }
+
             await shop.deleteOne();
             res.status(200).json({
                 success: true,
@@ -419,7 +428,7 @@ router.delete(
     })
 );
 
-// update payment methods
+// --- UPDATE PAYMENT METHOD ---
 router.put(
     "/update-payment-methods",
     isSeller,
@@ -443,8 +452,7 @@ router.put(
     })
 );
 
-// delete payment methods
-
+// --- DELETE PAYMENT METHOD ---
 router.delete(
     "/delete-withdraw-method",
     isSeller,
@@ -452,10 +460,7 @@ router.delete(
         try {
             const shop = await Shop.findById(req.seller._id);
             if (!shop) {
-                return res.status(404).json({
-                    success: false,
-                    message: "Shop not found",
-                });
+                return next(new ErrorHandler("Shop not found", 404));
             }
             shop.withdrawMethod = null;
             await shop.save();
@@ -468,6 +473,5 @@ router.delete(
         }
     })
 );
-
 
 module.exports = router;

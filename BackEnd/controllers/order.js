@@ -7,8 +7,9 @@ const { isAuthenticated } = require('../middlewares/auth');
 const Product = require('../model/product');
 const { isSeller, isAdmin } = require('../middlewares/auth');
 const Shop = require("../model/shop");
+const Event = require("../model/event");
 
-// Create a new order
+// Create a new order (Supports both standard Products and Events safely)
 router.post(
   "/create-order",
   isAuthenticated,
@@ -16,34 +17,50 @@ router.post(
     try {
       const { cart, shippingAddress, paymentInfo } = req.body;
 
-      // group cart items by shopId
+      // Group cart items by shopId
       const shopItemsMap = new Map();
 
       for (const item of cart) {
-        const productId = item.product || item._id;
+        const itemId = item.product || item._id;
 
-        const product = await Product.findById(productId);
-        if (!product) {
-          return next(new ErrorHandler("Product not found", 404));
+        // 1. Try finding it as a standard Product first
+        let dbItem = await Product.findById(itemId);
+        let itemType = "Product";
+
+        // 2. 🛡️ Fallback: If not found, look for it in the Event collection
+        if (!dbItem) {
+          dbItem = await Event.findById(itemId);
+          itemType = "Event";
         }
 
-        const shopId = product.shop._id.toString();
+        // 3. If it doesn't exist in either collection, throw the error
+        if (!dbItem) {
+          return next(new ErrorHandler(`Item with ID ${itemId} not found in Products or Events`, 404));
+        }
+
+        // Handle structural consistency for shop references
+        const shopId = dbItem.shop?._id ? dbItem.shop._id.toString() : dbItem.shopId?.toString();
+
+        if (!shopId) {
+          return next(new ErrorHandler("Could not resolve shop metadata for this item", 400));
+        }
 
         if (!shopItemsMap.has(shopId)) {
           shopItemsMap.set(shopId, []);
         }
 
+        // Push sanitized data into the shop bucket
         shopItemsMap.get(shopId).push({
           ...item,
-          price: item.price || product.discountPrice || product.originalPrice,
+          itemType, // Optional: helpful context for order history tracking
+          price: item.discountPrice || item.price || dbItem.discountPrice || dbItem.originalPrice,
         });
       }
 
       const orders = [];
 
-      // create separate order for each shop
+      // Create separate orders for each unique vendor/shop
       for (const [shopId, items] of shopItemsMap) {
-        // ✅ calculate correct subtotal for this shop
         const shopTotalPrice = items.reduce((acc, item) => {
           return acc + Number(item.price) * Number(item.qty || item.quantity || 1);
         }, 0);
@@ -52,7 +69,7 @@ router.post(
           cart: items,
           shippingAddress,
           user: req.user,
-          totalPrice: shopTotalPrice, // ✅ FIXED HERE
+          totalPrice: shopTotalPrice,
           paymentInfo,
         });
 
@@ -139,7 +156,7 @@ router.put(
       if (nextStatus === "Delivered") {
         order.delieverAt = Date.now();
         order.deliveredAt = Date.now();
-        
+
         if (order.paymentInfo) {
           order.paymentInfo.status = "succeeded";
         }

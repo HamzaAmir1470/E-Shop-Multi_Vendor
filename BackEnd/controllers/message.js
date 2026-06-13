@@ -5,7 +5,8 @@ const fs = require('fs');
 const Messages = require('../model/messages');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const ErrorHandler = require('../utils/ErrorHandler');
-const { upload } = require('../multer'); // Import your existing multer config
+const cloudinary = require('../config/cloudinary');
+const upload = require('../multer');
 
 // Create new message (with image support)
 router.post('/create-new-message', upload.single('images'), catchAsyncErrors(async (req, res, next) => {
@@ -17,26 +18,39 @@ router.post('/create-new-message', upload.single('images'), catchAsyncErrors(asy
             return next(new ErrorHandler('Missing required fields', 400));
         }
 
-        let imageUrl = null;
+        let imageData = null;
 
-        // Handle file upload - using your existing multer config
+        // Handle file upload if an image is attached to the chat message
         if (req.file) {
-            imageUrl = req.file.filename;
+            // Convert memory buffer to base64 string for Cloudinary
+            const fileBase64 = req.file.buffer.toString('base64');
+            const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+            const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+                folder: 'messages', // Saves chat media files inside a 'messages' folder
+            });
+
+            // Format object with Cloudinary metadata keys
+            imageData = {
+                public_id: cloudinaryResponse.public_id,
+                url: cloudinaryResponse.secure_url,
+            };
         }
 
         const message = new Messages({
             conversationId: conversationId,
             text: text || '',
             sender: sender,
-            images: imageUrl
+            images: imageData // Assigns null or the {public_id, url} object
         });
 
         await message.save();
 
         res.status(201).json({
             success: true,
+            // Fixed the duplicate 'message' key bug here
             message: 'Message created successfully',
-            message: message
+            messageData: message
         });
     } catch (error) {
         console.error('Error creating message:', error);

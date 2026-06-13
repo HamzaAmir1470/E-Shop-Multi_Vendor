@@ -96,9 +96,15 @@ const ProductCard = ({ data, isEvent }) => {
             <Link to={isEvent ? `/product/${data?._id}?isEvent=true` : `/product/${data._id}`} onClick={(e) => e.stopPropagation()}>
                 {data?.images?.length > 0 && (
                     <img
-                        src={`${baseURL}/${data.images[0]}`}
+                        // ✅ Updated: Read the secure URL from Cloudinary directly
+                        src={data.images[0].url || data.images[0]}
                         alt={data?.name || "Product image"}
                         className="w-full h-[170px] object-contain"
+                        onError={(e) => {
+                            // Fallback image source if the link breaks
+                            e.target.onerror = null;
+                            e.target.src = "https://images.placeholders.dev/?width=170&height=170&text=No+Image";
+                        }}
                     />
                 )}
             </Link>

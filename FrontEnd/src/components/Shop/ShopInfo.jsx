@@ -9,19 +9,15 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 const getShopAvatarUrl = (avatar) => {
   if (!avatar) return '';
 
-  if (typeof avatar === 'string') {
-    return avatar.startsWith('http')
-      ? avatar
-      : `${backend_url}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
-  }
+  // 1. Normalize: Extract the target string regardless of data shape
+  const targetUrl = typeof avatar === 'object' ? avatar.url : avatar;
 
-  if (typeof avatar === 'object' && avatar.url) {
-    return avatar.url.startsWith('http')
-      ? avatar.url
-      : `${backend_url}${avatar.url.startsWith('/') ? '' : '/'}${avatar.url}`;
-  }
+  if (!targetUrl || typeof targetUrl !== 'string') return '';
 
-  return '';
+  // 2. Return the absolute link or build the local backend path safely
+  return targetUrl.startsWith('http')
+    ? targetUrl
+    : `${backend_url}${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
 };
 
 
@@ -76,7 +72,7 @@ const ShopInfo = ({ isOwner }) => {
               src={getShopAvatarUrl(data?.avatar)}
               alt={seller?.name || "Shop Avatar"}
               className='relative w-[140px] h-[140px] object-cover rounded-full border-4 border-white shadow-2xl'
-             
+
             />
           </div>
           <h3 className='text-center mt-4 text-2xl font-bold text-white'>

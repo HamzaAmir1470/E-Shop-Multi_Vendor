@@ -11,20 +11,18 @@ import { backend_url } from "../../../server";
 const getAvatarUrl = (avatar) => {
     if (!avatar) return null;
 
-    if (typeof avatar === 'string') {
-        return avatar.startsWith('http')
-            ? avatar
-            : `${backend_url}${avatar.startsWith('/') ? '' : '/'}${avatar}`;
-    }
+    // Handle Cloudinary object type or flat string paths seamlessly
+    const path = typeof avatar === 'object' ? avatar?.url : avatar;
 
-    if (typeof avatar === 'object' && avatar.url) {
-        return avatar.url.startsWith('http')
-            ? avatar.url
-            : `${backend_url}${avatar.url.startsWith('/') ? '' : '/'}${avatar.url}`;
-    }
+    if (!path || typeof path !== 'string') return null;
 
-    return null;
+    // If it's a direct cloud link (Cloudinary), return as-is
+    if (path.startsWith('http')) return path;
+
+    // Fallback for legacy disk upload filenames
+    return `${backend_url}${path.startsWith('/') ? '' : '/'}${path}`;
 };
+
 const DashboardHeader = () => {
     const { seller } = useSelector((state) => state.seller);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -179,7 +177,7 @@ const DashboardHeader = () => {
                                     src={getAvatarUrl(seller.avatar)}
                                     alt={seller.name || "Seller Avatar"}
                                     className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-gray-200 hover:border-green-400 transition-colors duration-200"
-                                   
+
                                 />
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                             </div>
