@@ -265,7 +265,7 @@ const ProductDetails = ({ data }) => {
                             </div>
 
                             {data.images && data.images.length > 0 && (
-                                <div className="mt-6 grid grid-cols-4 sm:grid-cols-6 gap-3">
+                                <div className="mt-6 ml-25 grid grid-cols-4 sm:grid-cols-6 gap-3">
                                     {data.images.map((img, i) => (
                                         <div key={i} className={`cursor-pointer p-1 rounded-lg border transition-all duration-300 transform ${select === i ? 'border-indigo-600 bg-indigo-50 shadow-lg scale-105' : 'border-gray-200 hover:border-indigo-300 hover:shadow-sm'}`} onClick={(e) => { e.stopPropagation(); setSelect(i) }}>
                                             <img src={`${backend_url}${img}`} className="h-20 w-20 object-cover rounded-md" alt={`${data.name} thumbnail ${i + 1}`} />
@@ -306,7 +306,7 @@ const ProductDetails = ({ data }) => {
                             <div className={`flex flex-col sm:flex-row items-center justify-between gap-4 mt-8 p-4 rounded-lg ${styles.card}`}>
                                 <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
-                                        <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                        <img src={shop?.avatar ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56'} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} />
                                         <div>
                                             <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                             <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>
