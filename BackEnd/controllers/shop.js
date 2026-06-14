@@ -276,7 +276,7 @@ router.get("/logout", isSeller, catchAsyncErrors(async (req, res, next) => {
             expires: new Date(Date.now()),
             httpOnly: true,
             secure: true,
-            sameSite: "None",
+            sameSite: "none",
         });
         res.status(200).json({
             success: true,
