@@ -1,4 +1,3 @@
-
 const sendToken = (user, statusCode, res) => {
     const token = user.getJwtToken();
 
@@ -8,7 +7,8 @@ const sendToken = (user, statusCode, res) => {
         ),
         httpOnly: true,
         secure: true,
-        sameSite: "None",
+        sameSite: "none", 
+        path: "/",        
     };
 
     res

@@ -277,6 +277,7 @@ router.get("/logout", isSeller, catchAsyncErrors(async (req, res, next) => {
             httpOnly: true,
             secure: true,
             sameSite: "none",
+            path: "/",
         });
         res.status(200).json({
             success: true,
