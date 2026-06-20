@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  # --- BACKEND SERVICE ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app/backend
+      - /app/backend/node_modules
+    env_file:
+      - ./backend/config/.env
+    # Overrides "npm start" to run nodemon via your dev script for hot-reloading
+    command: npm run dev
+    environment:
+      - NODE_ENV=development
+    networks:
+      - eshop-network
+
+  # --- SOCKET SERVICE ---
+  socket:
+    build:
+      context: ./socket
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./socket:/app/socket
+      - /app/socket/node_modules
+    networks:
+      - eshop-network
+
+  # --- FRONTEND SERVICE ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - VITE_SERVER_URL=http://localhost:8000
+    networks:
+      - eshop-network
+    depends_on:
+      - backend
+      - socket
+
+networks:
+  eshop-network:
+    driver: bridge
