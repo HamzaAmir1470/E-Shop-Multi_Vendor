@@ -1,13 +1,14 @@
 const sendToken = (user, statusCode, res) => {
     const token = user.getJwtToken();
+    const isProduction = process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL?.includes("http://13.53");
 
     const options = {
         expires: new Date(
             Date.now() + 7 * 24 * 60 * 60 * 1000 // 7 days
         ),
         httpOnly: true,
-        secure: true,
-        sameSite: "none", 
+        secure: isProduction, 
+        sameSite: isProduction ? "none" : "lax", 
         path: "/",        
     };
 

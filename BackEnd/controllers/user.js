@@ -30,7 +30,7 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
         const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
 
         const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
-            folder: 'avatars', 
+            folder: 'avatars',
         });
 
         const user = {
@@ -44,7 +44,9 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
         };
 
         const activationToken = createActivationToken(user);
-        const activationUrl = `https://sultanf.vercel.app/activation/${activationToken}`;
+
+        const frontendUrl = process.env.FRONTEND_URL || 'https://sultanf.vercel.app';
+        const activationUrl = `${frontendUrl}/activation/${activationToken}`;
 
         try {
             await sendMail({
@@ -232,8 +234,8 @@ router.get("/logout", isAuthenticated, catchAsyncErrors(async (req, res, next) =
             expires: new Date(0),
             httpOnly: true,
             secure: true,
-            sameSite: "none",     
-            path: "/",            
+            sameSite: "none",
+            path: "/",
         });
 
         res.status(200).json({
