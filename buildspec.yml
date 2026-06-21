@@ -1,0 +1,34 @@
+version: 0.2
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws --version
+      - aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building Backend Docker image...
+      - docker build -t sultan-backend ./backend
+      - docker tag sultan-backend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-backend:latest
+      
+      - echo Building Socket Docker image...
+      - docker build -t sultan-socket ./socket
+      - docker tag sultan-socket:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-socket:latest
+      
+      - echo Building Frontend Production Docker image...
+      - docker build --build-arg VITE_SERVER_URL=$VITE_SERVER_URL -t sultan-frontend -f ./frontend/Dockerfile.prod ./frontend
+      - docker tag sultan-frontend:latest $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-frontend:latest
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing Docker images to ECR...
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-backend:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-socket:latest
+      - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sultan-frontend:latest
+      - echo Writing deployment artifacts...
+      - artifacts-template.yml
+artifacts:
+  files:
+    - docker-compose.prod.yml

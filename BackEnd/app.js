@@ -8,7 +8,7 @@ const path = require('path');
 const dotenv = require('dotenv'); // 1. Moved Up
 
 // config - 2. Load environmental variables early
-if (process.env.NODE_ENV !== 'PRODUCTION') {
+if (process.env.NODE_ENV !== 'production') {
   dotenv.config({
     path: './config/.env'
   });

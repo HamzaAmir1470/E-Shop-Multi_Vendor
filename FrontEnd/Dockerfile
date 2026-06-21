@@ -1,18 +1,20 @@
-# 1. Use the official Node.js image
-FROM node:20-alpine
-
-# 2. Set the working directory
+# Stage 1: Build the Vite application
+FROM node:20-alpine AS build
 WORKDIR /app/frontend
-
-# 3. Copy package files and install dependencies
 COPY package*.json ./
 RUN npm install
-
-# 4. Copy the rest of the application code
 COPY . .
 
-# 5. Expose Vite's default dev port
-EXPOSE 5173
+# Declare the arguments so they are accessible during the build phase
+ARG VITE_SERVER_URL
+ARG VITE_FRONTEND_URL
+ENV VITE_SERVER_URL=$VITE_SERVER_URL
+ENV VITE_FRONTEND_URL=$VITE_FRONTEND_URL
 
-# 6. Start Vite with the host flag so it's accessible outside the container
-CMD ["npm", "run", "dev", "--", "--host"]
+RUN npm run build
+
+# Stage 2: Serve static files using Nginx
+FROM nginx:alpine
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]

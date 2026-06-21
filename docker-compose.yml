@@ -3,54 +3,48 @@ version: '3.8'
 services:
   # --- BACKEND SERVICE ---
   backend:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app/backend
-      - /app/backend/node_modules
     env_file:
       - ./backend/config/.env
-    # Overrides "npm start" to run nodemon via your dev script for hot-reloading
-    command: npm run dev
     environment:
-      - NODE_ENV=development
+      - NODE_ENV=production
     networks:
-      - eshop-network
+      - sultan-network
 
   # --- SOCKET SERVICE ---
   socket:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-socket:latest
     build:
       context: ./socket
       dockerfile: Dockerfile
     ports:
       - "4000:4000"
-    volumes:
-      - ./socket:/app/socket
-      - /app/socket/node_modules
     networks:
-      - eshop-network
+      - sultan-network
 
-  # --- FRONTEND SERVICE ---
+  # --- FRONTEND SERVICE (PRODUCTION) ---
   frontend:
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-frontend:latest
     build:
       context: ./frontend
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.prod
+      args:
+        # Provide your EC2 Instance Public IP or your Custom Domain here
+        - VITE_SERVER_URL=http://your-ec2-public-ip:8000
+        - VITE_FRONTEND_URL=http://your-ec2-public-ip
     ports:
-      - "5173:5173"
-    volumes:
-      - ./frontend:/app/frontend
-      - /app/frontend/node_modules
-    environment:
-      - VITE_SERVER_URL=http://localhost:8000
+      - "80:80"
     networks:
-      - eshop-network
+      - sultan-network
     depends_on:
       - backend
       - socket
 
 networks:
-  eshop-network:
+  sultan-network:
     driver: bridge
