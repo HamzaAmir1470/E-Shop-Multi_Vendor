@@ -3,7 +3,7 @@ version: '3.8'
 services:
   # --- BACKEND SERVICE ---
   backend:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-backend:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/backend:latest
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -14,37 +14,36 @@ services:
     environment:
       - NODE_ENV=production
     networks:
-      - sultan-network
+      - eshop-network
 
   # --- SOCKET SERVICE ---
   socket:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-socket:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/socket:latest
     build:
       context: ./socket
       dockerfile: Dockerfile
     ports:
       - "4000:4000"
     networks:
-      - sultan-network
+      - eshop-network
 
-  # --- FRONTEND SERVICE (PRODUCTION) ---
+  # --- FRONTEND SERVICE ---
   frontend:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/sultan-frontend:latest
+    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/frontend:latest
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        # Provide your EC2 Instance Public IP or your Custom Domain here
         - VITE_SERVER_URL=http://your-ec2-public-ip:8000
         - VITE_FRONTEND_URL=http://your-ec2-public-ip
     ports:
       - "80:80"
     networks:
-      - sultan-network
+      - eshop-network
     depends_on:
       - backend
       - socket
 
 networks:
-  sultan-network:
+  eshop-network:
     driver: bridge
