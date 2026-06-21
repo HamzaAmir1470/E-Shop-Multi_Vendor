@@ -17,7 +17,8 @@ if (process.env.NODE_ENV !== 'production') {
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://sultanf.vercel.app"
+  "https://sultanf.vercel.app",
+  "http://13.53.174.206"    //aws ip address
 ];
 
 app.use(
