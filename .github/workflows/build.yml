@@ -25,9 +25,14 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
+      # New Step: Generates the directory and file expected by docker-compose
+      - name: Create Mock Environment Configuration
+        run: |
+          mkdir -p BackEnd/config
+          touch BackEnd/config/.env
+
       - name: Build Docker Services
         env:
-          # Provide dummy values so Docker Compose doesn't generate invalid image tags
           AWS_ACCOUNT_ID: "123456789012"
           AWS_REGION: "us-east-1"
         run: |
@@ -46,9 +51,6 @@ jobs:
           
       - name: Run Tests (Optional)
         run: |
-          # If you have test scripts defined inside your containers, run them like this:
-          # docker compose exec -T BackEnd npm test
-          # docker compose exec -T FrontEnd npm test
           echo "Services built and verified successfully!"
 
       - name: Stop Services

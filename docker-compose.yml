@@ -5,12 +5,12 @@ services:
   backend:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/backend:latest
     build:
-      context: ./backend
+      context: ./BackEnd
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
     env_file:
-      - ./backend/config/.env
+      - ./BackEnd/config/.env
     environment:
       - NODE_ENV=production
     networks:
@@ -31,7 +31,7 @@ services:
   frontend:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/frontend:latest
     build:
-      context: ./frontend
+      context: ./FrontEnd
       dockerfile: Dockerfile.prod
       args:
         - VITE_SERVER_URL=http://your-ec2-public-ip:8000
