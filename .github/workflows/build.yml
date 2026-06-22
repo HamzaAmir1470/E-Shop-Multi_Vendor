@@ -26,10 +26,17 @@ jobs:
             ${{ runner.os }}-buildx-
 
       - name: Build Docker Services
+        env:
+          # Provide dummy values so Docker Compose doesn't generate invalid image tags
+          AWS_ACCOUNT_ID: "123456789012"
+          AWS_REGION: "us-east-1"
         run: |
           docker compose build
 
       - name: Start Services
+        env:
+          AWS_ACCOUNT_ID: "123456789012"
+          AWS_REGION: "us-east-1"
         run: |
           docker compose up -d
 
@@ -46,5 +53,8 @@ jobs:
 
       - name: Stop Services
         if: always()
+        env:
+          AWS_ACCOUNT_ID: "123456789012"
+          AWS_REGION: "us-east-1"
         run: |
           docker compose down
