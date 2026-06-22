@@ -25,9 +25,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-buildx-
 
-      # New Step: Generates the directory and file expected by docker-compose
-      - name: Create Mock Environment Configuration
+      # ----------------------------------------------------
+      # CRITICAL FIX STEP: Fix folder naming dynamically
+      # ----------------------------------------------------
+      - name: Standardize Casing and Create Mock Environment
         run: |
+          # 1. Dynamically fix BackEnd path if it's lowercase in the runner
+          if [ -d "backend" ]; then mv backend BackEnd; fi
+          
+          # 2. Dynamically fix FrontEnd path if it's lowercase in the runner
+          if [ -d "frontend" ]; then mv frontend FrontEnd; fi
+          
+          # 3. Ensure the environment directories and mockup file exist
           mkdir -p BackEnd/config
           touch BackEnd/config/.env
 
