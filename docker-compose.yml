@@ -31,8 +31,8 @@ services:
   frontend:
     image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/frontend:latest
     build:
-      context: ./FrontEnd
-      dockerfile: Dockerfile.prod
+      context: ./FrontEnd             # Must be capital E
+      dockerfile: Dockerfile.prod     # Matches your exact file name
       args:
         - VITE_SERVER_URL=http://your-ec2-public-ip:8000
         - VITE_FRONTEND_URL=http://your-ec2-public-ip
