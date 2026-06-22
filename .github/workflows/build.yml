@@ -1,0 +1,50 @@
+name: Docker MERN CI Build
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
+      - name: Build Docker Services
+        run: |
+          docker-compose build
+
+      - name: Start Services
+        run: |
+          docker-compose up -d
+
+      - name: Verify Running Containers
+        run: |
+          docker ps
+
+      - name: Run Tests (Optional)
+        run: |
+          # If you have test scripts defined inside your containers, run them like this:
+          # docker-compose exec -T BackEnd npm test
+          # docker-compose exec -T FrontEnd npm test
+          echo "Services built and verified successfully!"
+
+      - name: Stop Services
+        if: always()
+        run: |
+          docker-compose down
