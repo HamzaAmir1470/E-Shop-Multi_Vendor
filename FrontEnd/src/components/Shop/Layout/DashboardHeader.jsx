@@ -256,7 +256,7 @@ const DashboardHeader = () => {
                         <div className="border-t border-gray-100 p-4">
                             <div className="flex items-center space-x-3">
                                 <img
-                                    src={getAvatarUrl()}
+                                    src={getAvatarUrl(seller.avatar)}
                                     alt={seller.name || "Seller Avatar"}
                                     className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                                     onError={(e) => {

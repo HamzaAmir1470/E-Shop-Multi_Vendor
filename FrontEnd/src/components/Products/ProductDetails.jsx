@@ -96,6 +96,20 @@ const ReviewsModal = ({ reviews, onClose }) => {
         </div>
     )
 }
+const getAvatarUrl = (avatar) => {
+    if (!avatar) return null;
+
+    // Handle Cloudinary object type or flat string paths seamlessly
+    const path = typeof avatar === 'object' ? avatar?.url : avatar;
+
+    if (!path || typeof path !== 'string') return null;
+
+    // If it's a direct cloud link (Cloudinary), return as-is
+    if (path.startsWith('http')) return path;
+
+    // Fallback for legacy disk upload filenames
+    return `${backend_url}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 const ProductDetails = ({ data }) => {
     const { wishlist } = useSelector((state) => state.wishlist)
@@ -106,11 +120,12 @@ const ProductDetails = ({ data }) => {
     const [click, setClick] = useState(false)
     const [select, setSelect] = useState(0)
     const [shopInfo, setShopInfo] = useState(null)
+    const { seller } = useSelector((state) => state.seller);
 
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const shopId = data?.shopId || data?.shop?._id
-console.log(data)
+    console.log('ProductDetails data:', data)
     useEffect(() => {
         if (shopId) {
             dispatch(getAllProductsShop(shopId))
@@ -220,8 +235,8 @@ console.log(data)
     const mainImageUrl = activeImageObject?.url || (typeof activeImageObject === 'string' ? `${backend_url}${activeImageObject}` : '');
 
     // Determine shop avatar image source URL 
-    const shopAvatarUrl = data.shop?.avatar?.url || (typeof data.shop?.avatar === 'string' ? `${backend_url}${data.shop.avatar}` : '');
-    
+    const shopAvatarUrl = getAvatarUrl(seller?.avatar);
+    console.log("seller", seller);
     return (
         <div className="bg-white">
             {data && (
