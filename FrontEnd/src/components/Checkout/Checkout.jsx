@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { backend_url, server } from "../../server";
+import { resolveAssetUrl, server } from "../../server";
 
 const Checkout = () => {
     const { user } = useSelector((state) => state.user);
@@ -659,11 +659,7 @@ const CartData = ({
                     return (
                         <div key={index} className="flex items-center gap-3 text-sm">
                             <img
-                                src={
-                                    item.images?.[0]?.url
-                                        ? item.images[0].url                              
-                                        : `${backend_url}/${item.images?.[0] || ''}`      
-                                }
+                                src={resolveAssetUrl(item.images?.[0]) || 'https://via.placeholder.com/48'}
                                 alt={item.name}
                                 className="w-12 h-12 object-cover rounded"
                             />

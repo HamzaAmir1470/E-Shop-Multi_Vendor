@@ -4,7 +4,6 @@ const Product = require('../model/product.js')
 const catchAsyncErrors = require("../middlewares/catchAsyncErrors.js");
 const Shop = require('../model/shop.js')
 const { isSeller, isAdmin, isAuthenticated } = require("../middlewares/auth.js");
-const fs = require('fs');
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const cloudinary = require('../config/cloudinary');
 const upload = require('../multer');
@@ -97,17 +96,14 @@ router.delete(
             const productId = req.params.id;
             const productData = await Product.findById(productId);
 
-            productData.images.forEach((imageUrl) => {
-                const filename = imageUrl;
-                const filePath = `uploads/${filename}`;
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting file:", err);
-                    }
-                });
-            });
+            if (productData?.images?.length) {
+                await Promise.all(
+                    productData.images.map((image) =>
+                        image?.public_id ? cloudinary.uploader.destroy(image.public_id) : Promise.resolve()
+                    )
+                );
+            }
 
-            console.log(productData.images)
             const product = await Product.findByIdAndDelete(productId);
 
             if (!product) {

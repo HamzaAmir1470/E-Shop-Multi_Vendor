@@ -5,7 +5,7 @@ import { MdMoneyOffCsred } from "react-icons/md";
 import styles from "../../src/styles/styles.js";
 import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { backend_url } from '../server.js';
+import { resolveAssetUrl } from '../server.js';
 import axios from 'axios';
 import { server } from '../server.js';
 import { toast } from "react-toastify";
@@ -189,7 +189,7 @@ const UserOrderDetails = () => {
             {orderItems.map((item, index) => (
               <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                 <img
-                  src={`${backend_url}/${item.images[0]}`}
+                  src={resolveAssetUrl(item.images?.[0]) || 'https://via.placeholder.com/64'}
                   alt={item.name}
                   className='w-16 h-16 object-cover rounded-md'
                 />
@@ -287,7 +287,7 @@ const UserOrderDetails = () => {
                       <Link to={`/product/${selectedItem?._id}`} className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                         <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-xl mb-6">
                           <img
-                            src={`${backend_url}/${selectedItem?.images[0]}`}
+                            src={resolveAssetUrl(selectedItem?.images?.[0]) || 'https://via.placeholder.com/80'}
                             alt={selectedItem?.name}
                             className="w-20 h-20 object-cover rounded-lg shadow-sm"
                           />

@@ -13,6 +13,8 @@ const sendToken = require('../utils/jwtToken');
 const { isAuthenticated, isAdmin } = require('../middlewares/auth');
 const cloudinary = require('../config/cloudinary'); // Ensure this path matches your setup
 
+const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+
 router.post("/create-user", upload.single('file'), async (req, res, next) => {
     try {
         const { name, email, password } = req.body;
@@ -45,8 +47,7 @@ router.post("/create-user", upload.single('file'), async (req, res, next) => {
 
         const activationToken = createActivationToken(user);
 
-        const frontendUrl = process.env.FRONTEND_URL || 'https://sultanf.vercel.app';
-        const activationUrl = `${frontendUrl}/activation/${activationToken}`;
+        const activationUrl = `${getFrontendUrl()}/activation/${activationToken}`;
 
         try {
             await sendMail({
@@ -157,7 +158,7 @@ router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
 
         await user.save({ validateBeforeSave: false });
 
-        const resetUrl = `https://sultanf.vercel.app/reset-password/${resetToken}`;
+        const resetUrl = `${getFrontendUrl()}/reset-password/${resetToken}`;
 
         await sendMail({
             email: user.email,
@@ -313,20 +314,20 @@ router.put(
                     message: "Please upload an avatar",
                 });
             }
-            const filename = req.file.filename;
-            const fileUrl = filename;
+            const fileBase64 = req.file.buffer.toString('base64');
+            const fileDataUrl = `data:${req.file.mimetype};base64,${fileBase64}`;
+
+            const cloudinaryResponse = await cloudinary.uploader.upload(fileDataUrl, {
+                folder: 'avatars',
+            });
+
             // Delete old avatar file
             if (user.avatar && user.avatar.public_id) {
-                const oldFilePath = `uploads/${user.avatar.public_id}`;
-                fs.unlink(oldFilePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting old avatar:", err);
-                    }
-                });
+                await cloudinary.uploader.destroy(user.avatar.public_id);
             }
             user.avatar = {
-                public_id: filename,
-                url: fileUrl,
+                public_id: cloudinaryResponse.public_id,
+                url: cloudinaryResponse.secure_url,
             };
             await user.save();
             res.status(200).json({

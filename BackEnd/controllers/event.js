@@ -6,7 +6,6 @@ const Shop = require('../model/shop.js')
 const { isSeller, isAdmin, isAuthenticated } = require("../middlewares/auth.js");
 const ErrorHandler = require("../utils/ErrorHandler.js");
 const Event = require('../model/event.js')
-const fs = require('fs');
 const cloudinary = require('../config/cloudinary');
 const upload = require("../multer.js")
 
@@ -100,15 +99,13 @@ router.delete(
             const eventId = req.params.id;
             const eventData = await Event.findById(eventId);
 
-            eventData.images.forEach((imageUrl) => {
-                const filename = imageUrl;
-                const filePath = `uploads/${filename}`;
-                fs.unlink(filePath, (err) => {
-                    if (err) {
-                        console.error("Error deleting file:", err);
-                    }
-                });
-            });
+            if (eventData?.images?.length) {
+                await Promise.all(
+                    eventData.images.map((image) =>
+                        image?.public_id ? cloudinary.uploader.destroy(image.public_id) : Promise.resolve()
+                    )
+                );
+            }
 
             const event = await Event.findByIdAndDelete(eventId);
             if (!event) {

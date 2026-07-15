@@ -13,7 +13,7 @@ import {
     AiOutlineShareAlt,
 } from "react-icons/ai";
 import { BiStore, BiTrophy, BiShieldAlt, BiRefresh } from "react-icons/bi";
-import { server } from "../../../server";
+import { resolveAssetUrl, server } from "../../../server";
 import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -196,8 +196,6 @@ const ProductDetailsCard = ({
     if (!data) return null;
     if (!data.images || !data.images[0]) data.images = [''];
 
-    const baseURL = server?.replace('/api/v2', '') || 'http://localhost:8000';
-
     const avgRating = (() => {
         if (data?.reviews && data.reviews.length > 0) {
             const sum = data.reviews.reduce((a, r) => a + (r.rating || r.ratings || 0), 0);
@@ -207,10 +205,10 @@ const ProductDetailsCard = ({
         if (typeof data?.ratings === 'number') return data.ratings;
         return 0;
     })();
-
+console.log("Shop", shop);
     return (
         <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-2 sm:p-4 animate-fadeIn"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-9999 p-2 sm:p-4 animate-fadeIn"
             onClick={() => setOpen(false)}
         >
             <div
@@ -228,7 +226,7 @@ const ProductDetailsCard = ({
                 </button>
 
                 {/* Left Section - Image Gallery */}
-                <div className="w-full lg:w-1/2 bg-gradient-to-br from-gray-50 to-white p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto lg:overflow-y-auto max-h-[40vh] lg:max-h-none">
+                <div className="w-full lg:w-1/2 bg-linear-to-br from-gray-50 to-white p-3 sm:p-4 lg:p-6 flex flex-col overflow-y-auto lg:overflow-y-auto max-h-[40vh] lg:max-h-none">
                     {/* Main Image */}
                     <div className="relative bg-white rounded-xl shadow-lg overflow-hidden group">
                         {!imageLoaded && (
@@ -237,7 +235,7 @@ const ProductDetailsCard = ({
                             </div>
                         )}
                         <img
-                            src={`${baseURL}/${data.images[selectedImage]}`}
+                            src={resolveAssetUrl(data.images[selectedImage])}
                             alt={data.name}
                             className={`w-full h-auto max-h-[35vh] sm:max-h-[40vh] object-contain transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
                             onLoad={() => setImageLoaded(true)}
@@ -268,12 +266,12 @@ const ProductDetailsCard = ({
                                         setImageLoaded(false);
                                     }}
                                     className={`relative shrink-0 rounded-lg overflow-hidden border-2 transition-all duration-200 ${selectedImage === idx
-                                            ? 'border-indigo-500 shadow-lg scale-95'
-                                            : 'border-gray-200 hover:border-gray-400'
+                                        ? 'border-indigo-500 shadow-lg scale-95'
+                                        : 'border-gray-200 hover:border-gray-400'
                                         }`}
                                 >
                                     <img
-                                        src={`${baseURL}/${img}`}
+                                        src={resolveAssetUrl(img)}
                                         alt={`${data.name} ${idx + 1}`}
                                         className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 object-cover"
                                     />
@@ -288,7 +286,7 @@ const ProductDetailsCard = ({
                             <div className="flex items-center justify-between gap-2 p-2 sm:p-3 bg-gray-50 rounded-xl">
                                 <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                                     <img
-                                        src={`${baseURL}/${shop?.avatar || shop?.shop_avatar?.[0] || ''}`}
+                                        src={resolveAssetUrl(shop?.avatar || shop?.shop_avatar?.[0]) || 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'}
                                         alt=""
                                         className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover border-2 border-white shadow-md"
                                         onError={(e) => {
@@ -423,8 +421,8 @@ const ProductDetailsCard = ({
                                     onClick={(e) => handleAddToCart(e, data._id)}
                                     disabled={isOutOfStock || isAddingToCart}
                                     className={`w-full sm:flex-1 h-10 sm:h-12 rounded-xl font-semibold transition-all duration-200 flex items-center justify-center gap-2 text-sm sm:text-base ${isOutOfStock
-                                            ? 'bg-gray-300 cursor-not-allowed'
-                                            : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl active:scale-98'
+                                        ? 'bg-gray-300 cursor-not-allowed'
+                                        : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg hover:shadow-xl active:scale-98'
                                         }`}
                                 >
                                     {isAddingToCart ? (
@@ -446,8 +444,8 @@ const ProductDetailsCard = ({
                                     <button
                                         onClick={(e) => inWishlist ? removeFromWishlistHandler(e, data) : addToWishlistHandler(e, data)}
                                         className={`flex-1 sm:flex-none w-full sm:w-12 h-10 sm:h-12 rounded-xl border-2 transition-all duration-200 flex items-center justify-center active:scale-95 ${inWishlist
-                                                ? 'border-red-200 bg-red-50 text-red-500'
-                                                : 'border-gray-300 hover:border-red-300 hover:bg-red-50 text-gray-600 hover:text-red-500'
+                                            ? 'border-red-200 bg-red-50 text-red-500'
+                                            : 'border-gray-300 hover:border-red-300 hover:bg-red-50 text-gray-600 hover:text-red-500'
                                             }`}
                                     >
                                         {inWishlist ? <AiFillHeart size={18} className="sm:text-[22px]" /> : <AiOutlineHeart size={18} className="sm:text-[22px]" />}

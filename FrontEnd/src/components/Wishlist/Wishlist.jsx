@@ -7,7 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { removeFromWishlist } from "../../redux/actions/wishlist";
 import { addToCart } from "../../redux/actions/cart";
 import { toast } from "react-toastify";
-import { server } from "../../server";
+import { resolveAssetUrl } from "../../server";
 import { Link } from "react-router-dom";
 
 const Wishlist = ({ setOpenWishlist }) => {
@@ -44,8 +44,6 @@ const Wishlist = ({ setOpenWishlist }) => {
     setOpenWishlist(false);
   };
 
-  const baseURL = server?.replace('/api/v2', '') || 'http://localhost:8000';
-
   return (
     /* BACKDROP */
     <div
@@ -73,7 +71,7 @@ const Wishlist = ({ setOpenWishlist }) => {
           {/* HEADER */}
           <div className={`${styles.normalFlex} p-4 border-b`}>
             <AiOutlineHeart size={26} className="text-red-500" />
-            <h5 className="pl-3 text-[20px] font-[600]">
+            <h5 className="pl-3 text-[20px] font-semibold">
               {wishlist?.length || 0} {wishlist?.length === 1 ? 'Item' : 'Items'}
             </h5>
           </div>
@@ -87,7 +85,6 @@ const Wishlist = ({ setOpenWishlist }) => {
                   data={item}
                   handleRemoveFromWishlist={handleRemoveFromWishlist}
                   handleAddToCart={handleAddToCart}
-                  baseURL={baseURL}
                   setOpenWishlist={setOpenWishlist}
                 />
               ))
@@ -103,7 +100,7 @@ const Wishlist = ({ setOpenWishlist }) => {
   );
 };
 
-const WishlistItem = ({ data, handleRemoveFromWishlist, handleAddToCart, baseURL, setOpenWishlist }) => {
+const WishlistItem = ({ data, handleRemoveFromWishlist, handleAddToCart, setOpenWishlist }) => {
   // Create a product slug from the name for the URL
   const productName = data?.name || "product";
 
@@ -130,9 +127,9 @@ const WishlistItem = ({ data, handleRemoveFromWishlist, handleAddToCart, baseURL
           className="block"
         >
           <img
-            src={data?.images?.[0] ? `${baseURL}/${data.images[0]}` : 'https://via.placeholder.com/85'}
+            src={resolveAssetUrl(data?.images?.[0]) || 'https://via.placeholder.com/85'}
             alt={data?.name || "Product"}
-            className="w-[85px] h-[85px] rounded-md shadow-sm object-cover hover:opacity-80 transition-opacity"
+            className="w-20 h-20 rounded-md shadow-sm object-cover hover:opacity-80 transition-opacity"
             onError={(e) => {
               e.target.src = "https://via.placeholder.com/85";
             }}
@@ -146,12 +143,12 @@ const WishlistItem = ({ data, handleRemoveFromWishlist, handleAddToCart, baseURL
             onClick={handleProductClick}
             className="hover:text-blue-600 transition-colors"
           >
-            <h1 className="text-[15px] font-[600] leading-5 text-gray-900 line-clamp-2">
+            <h1 className="text-[15px] font-semibold leading-5 text-gray-900 line-clamp-2">
               {data?.name || "Product"}
             </h1>
           </Link>
 
-          <h4 className="font-[500] text-[17px] pt-[6px] text-[#d02222]">
+          <h4 className="font-medium text-[17px] pt-1.5 text-[#d02222]">
             USD ${data?.discountPrice || data?.price || 0}
           </h4>
 

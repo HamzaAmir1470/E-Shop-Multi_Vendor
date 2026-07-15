@@ -14,6 +14,8 @@ const upload = require('../multer');
 const sendShopToken = require('../utils/sendShopToken');
 const cloudinary = require('../config/cloudinary');
 
+const getFrontendUrl = () => (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+
 // create activation token
 const createActivationToken = (seller) => {
     return jwt.sign(seller, process.env.ACTIVATION_SECRET, {
@@ -63,7 +65,7 @@ router.post('/create-shop', upload.single('file'), async (req, res, next) => {
         const activationToken = createActivationToken(sellerData);
 
         // Dev URI context string. Update this to your deployed domain for production releases
-        const activationUrl = `https://sultanf.vercel.app/seller/activation/${activationToken}`;
+        const activationUrl = `${getFrontendUrl()}/seller/activation/${activationToken}`;
 
         try {
             await sendMail({
@@ -199,7 +201,7 @@ router.post("/forgot-password", catchAsyncErrors(async (req, res, next) => {
 
         await seller.save({ validateBeforeSave: false });
 
-        const resetUrl = `https://sultanf.vercel.app/seller/reset-password/${resetToken}`;
+        const resetUrl = `${getFrontendUrl()}/seller/reset-password/${resetToken}`;
 
         await sendMail({
             email: seller.email,

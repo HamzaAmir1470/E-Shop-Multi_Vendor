@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import Header from "../components/Layout/Header";
 import { useSelector } from "react-redux";
 import { format } from "timeago.js";
-import { backend_url, server } from "../server";
+import { resolveAssetUrl, server } from "../server";
 import axios from "axios";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -19,7 +19,7 @@ import { BiSmile, BiImageAdd } from "react-icons/bi";
 import { IoMdAttach } from "react-icons/io";
 import io from "socket.io-client";
 
-const ENDPOINT = "http://localhost:4000/";
+const ENDPOINT = import.meta.env.VITE_SOCKET_SERVER_URL || "http://localhost:4000/";
 
 const UserInbox = () => {
     const { user, loading } = useSelector((state) => state.user);
@@ -348,13 +348,13 @@ const UserInbox = () => {
     }, [location.search, conversations]);
 
     return (
-        <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="w-full min-h-screen bg-linear-to-br from-gray-50 to-gray-100">
             {!open ? (
                 <>
                     <Header />
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
                         <div className="text-center mb-6 sm:mb-8">
-                            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+                            <h1 className="text-2xl sm:text-3xl font-bold bg-linear-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
                                 Messages
                             </h1>
                             <p className="text-sm sm:text-base text-gray-500 mt-2">Connect with sellers and manage your conversations</p>
@@ -465,14 +465,9 @@ const MessageList = ({
             onClick={handleClick}
         >
             {/* Avatar Section */}
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
                 <img
-                    src={
-                        user?.avatar
-                            ? `${backend_url}/${user.avatar}`
-                            : "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" +
-                            (user?.name || "User")
-                    }
+                    src={resolveAssetUrl(user?.avatar) || "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" + (user?.name || "User")}
                     className="w-12 h-12 sm:w-14 sm:h-14 rounded-full object-cover shadow-md"
                     alt={user?.name}
                 />
@@ -489,7 +484,7 @@ const MessageList = ({
                         {user?.name || "Loading..."}
                     </h2>
                     {data.updatedAt && (
-                        <span className="text-[10px] sm:text-xs text-gray-400 ml-2 flex-shrink-0">
+                        <span className="text-[10px] sm:text-xs text-gray-400 ml-2 shrink-0">
                             {format(data.updatedAt)}
                         </span>
                     )}
@@ -539,10 +534,7 @@ const UserInboxs = ({
 
         if (imagePath.startsWith('http')) return imagePath;
 
-        const cleanPath = imagePath.replace(/^\/+/, '').replace(/^uploads\//, '');
-        const baseUrl = backend_url.replace(/\/$/, '');
-
-        return `${baseUrl}/${cleanPath}`;
+        return resolveAssetUrl(imagePath);
     };
 
     return (
@@ -559,12 +551,7 @@ const UserInboxs = ({
                     </button>
 
                     <img
-                        src={
-                            userData?.avatar
-                                ? `${backend_url}/${userData.avatar}`
-                                : "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" +
-                                (userData?.name || "User")
-                        }
+                        src={resolveAssetUrl(userData?.avatar) || "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" + (userData?.name || "User")}
                         className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover shadow-sm"
                         alt={userData?.name}
                     />
@@ -610,12 +597,7 @@ const UserInboxs = ({
                             >
                                 {!isOwnMessage && (
                                     <img
-                                        src={
-                                            userData?.avatar
-                                                ? `${backend_url}/${userData.avatar}`
-                                                : "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" +
-                                                (userData?.name || "User")
-                                        }
+                                        src={resolveAssetUrl(userData?.avatar) || "https://ui-avatars.com/api/?background=3B82F6&color=fff&bold=true&name=" + (userData?.name || "User")}
                                         className="w-6 h-6 sm:w-8 sm:h-8 rounded-full object-cover mr-1.5 sm:mr-2 self-end mb-1"
                                         alt="avatar"
                                     />
@@ -624,11 +606,11 @@ const UserInboxs = ({
                                     {item.text && item.text.trim() !== "" && (
                                         <div
                                             className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-2xl ${isOwnMessage
-                                                    ? "bg-blue-600 text-white rounded-br-sm"
-                                                    : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
+                                                ? "bg-blue-600 text-white rounded-br-sm"
+                                                : "bg-white text-gray-800 rounded-bl-sm shadow-sm border border-gray-100"
                                                 }`}
                                         >
-                                            <p className="text-sm sm:text-base break-words">{item.text}</p>
+                                            <p className="text-sm sm:text-base wrap-break-word">{item.text}</p>
                                         </div>
                                     )}
                                     {imageUrl && (
@@ -636,7 +618,7 @@ const UserInboxs = ({
                                             <img
                                                 src={imageUrl}
                                                 alt="Shared image"
-                                                className="max-w-[250px] sm:max-w-[300px] max-h-[250px] sm:max-h-[300px] object-cover rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
+                                                className="max-w-64 sm:max-w-72 max-h-64 sm:max-h-72 object-cover rounded-lg shadow-md cursor-pointer hover:opacity-90 transition-opacity"
                                                 onClick={() => {
                                                     if (!item.isTemp) {
                                                         window.open(imageUrl, '_blank');
@@ -707,8 +689,8 @@ const UserInboxs = ({
                         type="submit"
                         disabled={!newMessage.trim()}
                         className={`p-1.5 sm:p-2.5 rounded-full transition-all ${newMessage.trim()
-                                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md active:bg-blue-800"
-                                : "bg-gray-100 text-gray-400 cursor-not-allowed"
+                            ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md active:bg-blue-800"
+                            : "bg-gray-100 text-gray-400 cursor-not-allowed"
                             }`}
                     >
                         <AiOutlineSend size={isMobile ? 18 : 20} />

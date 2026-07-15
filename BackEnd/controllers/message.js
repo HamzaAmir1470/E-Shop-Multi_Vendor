@@ -1,7 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const path = require('path');
-const fs = require('fs');
 const Messages = require('../model/messages');
 const catchAsyncErrors = require('../middlewares/catchAsyncErrors');
 const ErrorHandler = require('../utils/ErrorHandler');
@@ -83,12 +81,9 @@ router.delete('/delete-message/:messageId', catchAsyncErrors(async (req, res, ne
             return next(new ErrorHandler('Message not found', 404));
         }
 
-        // Delete image file if exists
-        if (message.images) {
-            const imagePath = path.join(__dirname, '../uploads', message.images);
-            if (fs.existsSync(imagePath)) {
-                fs.unlinkSync(imagePath);
-            }
+        // Delete image from Cloudinary if present
+        if (message.images?.public_id) {
+            await cloudinary.uploader.destroy(message.images.public_id);
         }
 
         await message.remove();

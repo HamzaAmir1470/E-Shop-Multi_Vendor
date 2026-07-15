@@ -21,10 +21,15 @@ process.on("uncaughtException", (err) => {
     process.exit(1);
 });
 
-// create server
-const server = app.listen(process.env.PORT, () => {
-    console.log(`Server is working on http://localhost:${process.env.PORT}`)
-});
+const PORT = process.env.PORT || 8000;
+
+// create server locally only; Vercel invokes the Express app as a serverless handler
+let server;
+if (!process.env.VERCEL && require.main === module) {
+    server = app.listen(PORT, () => {
+        console.log(`Server is working on http://localhost:${PORT}`)
+    });
+}
 
 // unhandled promise rejection
 process.on("unhandledRejection", (err) => {

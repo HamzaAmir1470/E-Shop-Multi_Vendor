@@ -7,6 +7,8 @@ const cors = require('cors');
 const path = require('path');
 const dotenv = require('dotenv'); // 1. Moved Up
 
+const normalizeOrigin = (value) => value ? value.replace(/\/$/, '') : value;
+
 // config - 2. Load environmental variables early
 if (process.env.NODE_ENV !== 'production') {
   dotenv.config({
@@ -17,9 +19,9 @@ if (process.env.NODE_ENV !== 'production') {
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
-  "https://sultanf.vercel.app",
-  "http://13.53.174.206"    //aws ip address
-];
+  normalizeOrigin(process.env.FRONTEND_URL),
+  "http://13.53.174.206"
+].filter(Boolean);
 
 app.use(
   cors({

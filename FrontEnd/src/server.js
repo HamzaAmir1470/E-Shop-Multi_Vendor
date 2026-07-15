@@ -1,14 +1,36 @@
-export const server = "https://e-shop-multi-vendor.vercel.app/api/v2";
-export const serverShop = "https://e-shop-multi-vendor.vercel.app/api/v2/shop";
-export const backend_url = "https://e-shop-multi-vendor.vercel.app/";
-export const frontend_url = "https://sultanf.vercel.app";
+const normalizeBaseUrl = (value) => value ? value.replace(/\/$/, "") : value;
 
-// Read the base server URL from the environment, defaulting to localhost for local dev
-// const BASE_SERVER_URL = import.meta.env.VITE_SERVER_URL || "http://localhost:8000";
+const backendBaseUrl = normalizeBaseUrl(
+    import.meta.env.VITE_BACKEND_URL ||
+    import.meta.env.VITE_SERVER_URL ||
+    "http://localhost:8000"
+);
 
-// export const server = `${BASE_SERVER_URL}/api/v2`;
-// export const serverShop = `${BASE_SERVER_URL}/api/v2/shop`;
-// export const backend_url = `${BASE_SERVER_URL}/`;
+const apiBaseUrl = normalizeBaseUrl(
+    import.meta.env.VITE_API_URL || `${backendBaseUrl}/api/v2`
+);
 
-// // Useful if your backend needs to know your frontend's origin for CORS
-// export const frontend_url = import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173";
+export const server = apiBaseUrl;
+export const serverShop = `${apiBaseUrl}/shop`;
+export const backend_url = backendBaseUrl;
+export const frontend_url = normalizeBaseUrl(
+    import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"
+);
+
+export const resolveAssetUrl = (value) => {
+    if (!value) return "";
+
+    if (typeof value === "string") {
+        if (/^https?:\/\//i.test(value)) {
+            return value;
+        }
+
+        return `${backend_url}/${value.replace(/^\/+/, "")}`;
+    }
+
+    if (typeof value === "object") {
+        return resolveAssetUrl(value.url || value.secure_url || value.image || value.path || value.public_id);
+    }
+
+    return "";
+};

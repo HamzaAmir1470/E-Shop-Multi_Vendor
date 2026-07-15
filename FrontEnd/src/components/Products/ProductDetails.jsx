@@ -110,7 +110,7 @@ const ProductDetails = ({ data }) => {
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const shopId = data?.shopId || data?.shop?._id
-
+console.log(data)
     useEffect(() => {
         if (shopId) {
             dispatch(getAllProductsShop(shopId))
@@ -220,8 +220,8 @@ const ProductDetails = ({ data }) => {
     const mainImageUrl = activeImageObject?.url || (typeof activeImageObject === 'string' ? `${backend_url}${activeImageObject}` : '');
 
     // Determine shop avatar image source URL 
-    const shopAvatarUrl = shop?.avatar?.url || (typeof shop?.avatar === 'string' ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56');
-
+    const shopAvatarUrl = data.shop?.avatar?.url || (typeof data.shop?.avatar === 'string' ? `${backend_url}${data.shop.avatar}` : '');
+    
     return (
         <div className="bg-white">
             {data && (
@@ -293,7 +293,7 @@ const ProductDetails = ({ data }) => {
                                 <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                                     <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                                         {/* 🛠️ Fix 4: Seller Card Avatar */}
-                                        <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                        <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} />
                                         <div>
                                             <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                             <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>
@@ -327,7 +327,7 @@ const ProductDetailsInfo = ({ data, products, shop }) => {
     const avgRating = data?.reviews && data.reviews.length > 0 ? (data.reviews.reduce((acc, r) => acc + (r.rating || r.ratings || 0), 0) / data.reviews.length).toFixed(1) : null
 
     // Determine shop avatar image source URL for the tab section
-    const shopAvatarUrl = shop?.avatar?.url || (typeof shop?.avatar === 'string' ? `${backend_url}${shop.avatar}` : 'https://via.placeholder.com/56');
+    const shopAvatarUrl = shop?.avatar?.url || (typeof shop?.avatar === 'string' ? `${backend_url}${shop.avatar}` : '');
 
     return (
         <div className="bg-[#f5f6fb] px-3 800px:px-10 py-2 rounded mx-15 mt-10">
@@ -428,7 +428,7 @@ const ProductDetailsInfo = ({ data, products, shop }) => {
                         <Link to={`/shop/preview/${shop?._id}`} onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center gap-4 hover:opacity-80 transition-opacity">
                                 {/* 🛠️ Fix 6: Seller Tab Information Block Avatar */}
-                                <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name} onError={(e) => { e.target.src = 'https://via.placeholder.com/56' }} />
+                                <img src={shopAvatarUrl} className="w-14 h-14 rounded-full object-cover" alt={shop?.name}  />
                                 <div>
                                     <h3 className={`${styles.shop_name} text-xl font-semibold`}>{shop?.name}</h3>
                                     <h5 className="text-sm text-gray-600">({avgRating || '0'}/5) Ratings</h5>

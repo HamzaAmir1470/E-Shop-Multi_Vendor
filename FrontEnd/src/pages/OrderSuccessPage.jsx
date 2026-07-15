@@ -4,7 +4,7 @@ import Header from "../components/Layout/Header";
 import Lottie from "lottie-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 import animationData from "../assets/animations/107043-success.json";
-import { backend_url } from "../server";
+import { resolveAssetUrl } from "../server";
 
 const OrderSuccessPage = () => {
     const location = useLocation();
@@ -55,7 +55,7 @@ const Success = ({ orderId, paymentMethod, amount, items, shippingAddress, payme
             return imagePath;
         }
 
-        return `${backend_url}${imagePath}`;
+        return resolveAssetUrl(imagePath);
     };
 
     const methodLabel =

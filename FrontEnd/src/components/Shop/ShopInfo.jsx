@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { backend_url, server } from '../../server';
+import { resolveAssetUrl, server } from '../../server';
 import { FiMapPin, FiPhone, FiPackage, FiStar, FiCalendar, FiEdit2, FiLogOut } from 'react-icons/fi';
 import { MdStorefront } from 'react-icons/md';
 import axios from 'axios';
@@ -14,10 +14,7 @@ const getShopAvatarUrl = (avatar) => {
 
   if (!targetUrl || typeof targetUrl !== 'string') return '';
 
-  // 2. Return the absolute link or build the local backend path safely
-  return targetUrl.startsWith('http')
-    ? targetUrl
-    : `${backend_url}${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
+  return resolveAssetUrl(targetUrl);
 };
 
 

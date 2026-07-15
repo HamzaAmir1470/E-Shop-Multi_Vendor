@@ -6,7 +6,7 @@ import { getAlleventsShop } from "../../redux/actions/event";
 import ProductCard from "../Route/ProductCard/ProductCard";
 import Ratings from "../Products/Ratings";
 import styles from "../../styles/styles";
-import { backend_url } from "../../server";
+import { resolveAssetUrl } from "../../server";
 
 const getUserAvatarUrl = (user) => {
   const avatarValue = user?.avatar;
@@ -16,15 +16,11 @@ const getUserAvatarUrl = (user) => {
   }
 
   if (typeof avatarValue === "string") {
-    return avatarValue.startsWith("http")
-      ? avatarValue
-      : `${backend_url}${avatarValue.startsWith("/") ? "" : "/"}${avatarValue}`;
+    return resolveAssetUrl(avatarValue);
   }
 
   if (typeof avatarValue === "object" && avatarValue.url) {
-    return avatarValue.url.startsWith("http")
-      ? avatarValue.url
-      : `${backend_url}${avatarValue.url.startsWith("/") ? "" : "/"}${avatarValue.url}`;
+    return resolveAssetUrl(avatarValue.url);
   }
 
   return `https://ui-avatars.com/api/?background=6366f1&color=fff&name=${encodeURIComponent(user?.name || "User")}`;

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { backend_url, server } from "../../server";
+import { resolveAssetUrl, server } from "../../server";
 import { AiOutlineCamera } from "react-icons/ai";
 import styles from "../../styles/styles";
 import axios from "axios";
@@ -90,7 +90,7 @@ const ShopSettings = () => {
                         <div className="relative">
                             <img
                                 // src={seller?.avatar ? `${backend_url}${seller.avatar}` : ""}
-                                src={avatar ? URL.createObjectURL(avatar) : seller?.avatar ? `${backend_url}${seller.avatar}` : ""}
+                                src={avatar ? URL.createObjectURL(avatar) : resolveAssetUrl(seller?.avatar) || ""}
 
                                 alt={seller?.name ? `${seller.name} avatar` : "Shop avatar"}
                                 className="w-40 h-40 md:w-48 md:h-48 rounded-full object-cover border-4 border-white shadow-xl transform hover:scale-105 transition-transform duration-300"
@@ -136,7 +136,7 @@ const ShopSettings = () => {
                                     value={name}
                                     placeholder="Enter shop name"
                                     onChange={(e) => setName(e.target.value)}
-                                    className={`${styles.input} !w-full`}
+                                    className={`${styles.input} w-full!`}
                                     required
                                 />
                             </div>
@@ -152,7 +152,7 @@ const ShopSettings = () => {
                                     value={phoneNumber}
                                     placeholder="Enter phone number"
                                     onChange={(e) => setPhoneNumber(e.target.value)}
-                                    className={`${styles.input} !w-full`}
+                                    className={`${styles.input} w-full!`}
                                     required
                                 />
                             </div>
@@ -168,7 +168,7 @@ const ShopSettings = () => {
                                     value={address}
                                     placeholder="Enter address"
                                     onChange={(e) => setAddress(e.target.value)}
-                                    className={`${styles.input} !w-full`}
+                                    className={`${styles.input} w-full!`}
                                     required
                                 />
                             </div>
@@ -184,7 +184,7 @@ const ShopSettings = () => {
                                     value={zipCode}
                                     placeholder="Enter zip code"
                                     onChange={(e) => setZipcode(e.target.value)}
-                                    className={`${styles.input} !w-full`}
+                                    className={`${styles.input} w-full!`}
                                     required
                                 />
                             </div>
@@ -210,7 +210,7 @@ const ShopSettings = () => {
                         <div className="mt-8">
                             <button
                                 type="submit"
-                                className="w-max block mx-auto md:w-auto px-8 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 "
+                                className="w-max block mx-auto md:w-auto px-8 py-3 bg-linear-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all duration-300 "
                             >
                                 Save Changes
                             </button>

@@ -6,7 +6,7 @@ import { HiOutlineReceiptRefund } from "react-icons/hi";
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getAllOrdersShop } from '../../redux/actions/order.js';
-import { backend_url, server } from '../../server.js';
+import { resolveAssetUrl, server } from '../../server.js';
 import { toast } from "react-toastify";
 import axios from 'axios';
 
@@ -194,7 +194,7 @@ const OrderDetails = () => {
                         {orderItems.map((item, index) => (
                             <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
                                 <img
-                                    src={`${backend_url}/${item.images[0]}`}
+                                    src={resolveAssetUrl(item.images?.[0]) || 'https://via.placeholder.com/64'}
                                     alt={item.name}
                                     className='w-16 h-16 object-cover rounded-md'
                                 />
@@ -330,7 +330,7 @@ const OrderDetails = () => {
                                         <HiOutlineReceiptRefund className="text-amber-600" />
                                         Refund request is waiting for seller approval.
                                     </div>
-                                    
+
                                 </div>
                             ) : hasRefundFlow ? (
                                 <select

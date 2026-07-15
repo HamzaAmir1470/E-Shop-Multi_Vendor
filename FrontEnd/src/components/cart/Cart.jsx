@@ -4,7 +4,7 @@ import { IoBagHandleOutline } from "react-icons/io5";
 import { HiOutlineMinus, HiPlus } from "react-icons/hi";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { backend_url } from "../../server";
+import { resolveAssetUrl } from "../../server";
 import { addToCart, removeFromCart }
   from "../../redux/actions/cart";
 import { toast } from "react-toastify";
@@ -145,11 +145,7 @@ const CartItem = ({ data, quantityChangeHandler, removeFromCart }) => {
       </div>
 
       <img
-        src={
-          data?.images?.[0]?.url
-            ? data.images[0].url                                
-            : `${backend_url}/${data?.images?.[0] || ''}`      
-        }
+        src={resolveAssetUrl(data?.images?.[0]) || 'https://via.placeholder.com/85'}
         alt={data?.name || "Product"}
         className="w-[60px] sm:w-[80px] h-[60px] sm:h-[80px] rounded-lg object-cover shadow-sm"
       />

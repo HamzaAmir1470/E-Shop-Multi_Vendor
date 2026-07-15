@@ -6,7 +6,7 @@ import { FiShoppingBag, FiPackage } from "react-icons/fi";
 import { BiMessageSquareDetail } from "react-icons/bi";
 import { BsBell } from "react-icons/bs";
 import { useSelector } from "react-redux";
-import { backend_url } from "../../../server.js";
+import { resolveAssetUrl } from "../../../server.js";
 
 const AdminHeader = () => {
     const { user } = useSelector((state) => state.user);
@@ -165,7 +165,7 @@ const AdminHeader = () => {
                     <div className="ml-4 flex items-center space-x-3">
                         <div className="relative">
                             <img
-                                src={user?.avatar?.url ? `${backend_url}${user?.avatar?.url}` : "/default-avatar.png"}
+                                src={resolveAssetUrl(user?.avatar) || "/default-avatar.png"}
                                 alt={user.name || "User Avatar"}
                                 className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-gray-200 hover:border-green-400 transition-colors duration-200"
                                 onClick={() => {
