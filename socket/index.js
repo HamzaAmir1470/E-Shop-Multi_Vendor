@@ -4,9 +4,11 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const server = http.createServer(app);
+
+const origin = process.env.FRONTEND_URL || "http://localhost:3000"; 
 const io = socketIO(server, {
     cors: {
-        origin: "http://localhost:3000", // Replace with your frontend URL
+        origin: origin,
         methods: ["GET", "POST"],
         credentials: true
     }
@@ -341,7 +343,7 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
     const PORT = process.env.PORT || 4000;
     server.listen(PORT, () => {
         console.log(`Socket.IO server is running on port ${PORT}`);
-        console.log(`CORS enabled for http://localhost:3000`);
+        console.log(`CORS enabled for ${origin}`);
     });
 }
 
