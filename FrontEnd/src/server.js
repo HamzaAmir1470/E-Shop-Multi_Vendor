@@ -3,7 +3,7 @@ const normalizeBaseUrl = (value) => value ? value.replace(/\/$/, "") : value;
 const backendBaseUrl = normalizeBaseUrl(
     import.meta.env.VITE_BACKEND_URL ||
     import.meta.env.VITE_SERVER_URL ||
-    "http://localhost:8000"
+    "https://e-shop-multi-vendor.vercel.app"
 );
 
 const apiBaseUrl = normalizeBaseUrl(
@@ -14,7 +14,7 @@ export const server = apiBaseUrl;
 export const serverShop = `${apiBaseUrl}/shop`;
 export const backend_url = backendBaseUrl;
 export const frontend_url = normalizeBaseUrl(
-    import.meta.env.VITE_FRONTEND_URL || "http://localhost:5173"
+    import.meta.env.VITE_FRONTEND_URL || "https://sultanf.vercel.app"
 );
 
 export const resolveAssetUrl = (value) => {
