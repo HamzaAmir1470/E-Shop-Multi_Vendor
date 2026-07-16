@@ -336,11 +336,14 @@ process.on('unhandledRejection', (reason, promise) => {
     console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-const PORT = process.env.PORT || 4000;
+// Avoid port binding if deploying to serverless/Vercel functions
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    const PORT = process.env.PORT || 4000;
+    server.listen(PORT, () => {
+        console.log(`Socket.IO server is running on port ${PORT}`);
+        console.log(`CORS enabled for http://localhost:3000`);
+    });
+}
 
-server.listen(PORT, () => {
-    console.log(`Socket.IO server is running on port ${PORT}`);
-    console.log(`CORS enabled for http://localhost:3000`);
-});
-
-module.exports = { io, server };
+// VERCEL REQUIREMENT: Export the express app/server instance directly as a default export module
+module.exports = server;
