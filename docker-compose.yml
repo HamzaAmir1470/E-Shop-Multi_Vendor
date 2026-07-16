@@ -3,7 +3,8 @@ version: '3.8'
 services:
   # --- BACKEND SERVICE ---
   backend:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/backend:latest
+    # Changed from AWS ECR to your Docker Hub repo
+    image: hamzaamir422/e-shop-backend:latest
     build:
       context: ./BackEnd
       dockerfile: Dockerfile
@@ -18,7 +19,8 @@ services:
 
   # --- SOCKET SERVICE ---
   socket:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/socket:latest
+    # Changed from AWS ECR to your Docker Hub repo
+    image: hamzaamir422/e-shop-socket:latest
     build:
       context: ./socket
       dockerfile: Dockerfile
@@ -29,13 +31,15 @@ services:
 
   # --- FRONTEND SERVICE ---
   frontend:
-    image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/e-shop/frontend:latest
+    # Changed from AWS ECR to your Docker Hub repo
+    image: hamzaamir422/e-shop-frontend:latest
     build:
       context: ./FrontEnd         
       dockerfile: dockerfile.prod 
       args:
-        - VITE_SERVER_URL=http://your-ec2-public-ip:8000
-        - VITE_FRONTEND_URL=http://your-ec2-public-ip
+        # Update these to point to your backend/socket production or test domain
+        - VITE_SERVER_URL=http://your-ec2-or-pwd-ip:8000
+        - VITE_FRONTEND_URL=http://your-ec2-or-pwd-ip
     ports:
       - "80:80"
     networks:
