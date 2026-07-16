@@ -120,12 +120,10 @@ const ProductDetails = ({ data }) => {
     const [click, setClick] = useState(false)
     const [select, setSelect] = useState(0)
     const [shopInfo, setShopInfo] = useState(null)
-    const { seller } = useSelector((state) => state.seller);
 
     const navigate = useNavigate()
     const dispatch = useDispatch()
     const shopId = data?.shopId || data?.shop?._id
-    console.log('ProductDetails data:', data)
     useEffect(() => {
         if (shopId) {
             dispatch(getAllProductsShop(shopId))
@@ -235,8 +233,7 @@ const ProductDetails = ({ data }) => {
     const mainImageUrl = activeImageObject?.url || (typeof activeImageObject === 'string' ? `${backend_url}${activeImageObject}` : '');
 
     // Determine shop avatar image source URL 
-    const shopAvatarUrl = getAvatarUrl(seller?.avatar);
-    console.log("seller", seller);
+    const shopAvatarUrl = getAvatarUrl(data?.shop.avatar);
     return (
         <div className="bg-white">
             {data && (
